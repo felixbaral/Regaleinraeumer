@@ -1,0 +1,50 @@
+%% Benutzerdefinierte Kommandos
+
+	\newcommand{\todo}[1]{\colorbox{red}{\textcolor{white}{TODO: #1}}}
+	
+
+
+%% Pakete 
+
+\documentclass[a4paper, 12pt]{scrartcl}
+\usepackage{ucs}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[english,ngerman]{babel}
+\usepackage{graphicx}
+\usepackage{enumerate}
+\usepackage{color}
+\usepackage{xcolor}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{scrtime} % for \thistime
+\usepackage{dsfont} %for \mathds
+\usepackage{framed}
+\usepackage[colorlinks=true,urlcolor=blue,linkcolor=black]{hyperref}
+\usepackage{perpage} %the perpage package, used for footnotes
+\usepackage{pifont} %used for customized footnotes
+\usepackage{caption}
+\usepackage{float}
+\usepackage{mathrsfs}
+\usepackage[usestackEOL]{stackengine}
+
+
+
+\begin{document}
+
+\begin{normalsize}
+
+\raggedright\textbf{\HugePeketeinräumerding}\\	
+		\begin{flushright}
+		\textit{...}
+		\textit{...}
+		\textit{...}
+		\textit{Felix Baral-Weber}\\
+		Stand: \space \today \space \thistime
+		\end{flushright}
+
+\end{normalsize}
+
+\input{kapitel/bla}
+%\input{lectures/lecture12}
+\end{document}
