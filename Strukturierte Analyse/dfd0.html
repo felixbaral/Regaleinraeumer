@@ -1,0 +1,115 @@
+<html>
+<head><title>Image map created by yEd</title>
+<style type="text/css">
+.tooltip {
+  font-size:10pt;
+  background-color:#FFFFCC;
+  border:1px solid black;
+  padding:2px
+}
+</style>
+<style type="text/css">
+.tooltip {
+  position:absolute;
+  display:none
+}
+</style>
+</head>
+<body>
+
+<script type="text/javascript">
+tooltip = null;
+document.onmousemove = updateTooltip;
+function updateTooltip(e) {
+try {
+if (document.all) {
+if (document.documentElement && document.documentElement.scrollTop) { // Explorer 6 Strict
+x = document.documentElement.scrollLeft + window.event.x;
+y = document.documentElement.scrollTop + window.event.y;
+}
+else { // all other Explorers
+x = document.body.scrollLeft + window.event.x;
+y = document.body.scrollTop + window.event.y;
+}
+}
+else {
+x = e.pageX;
+y = e.pageY;
+}
+if (tooltip != null) {
+o = 20;
+var sx, sy;
+if (self.pageYOffset) { // all except Explorer
+sx = self.pageXOffset;
+sy = self.pageYOffset;
+}
+else if (document.documentElement && document.documentElement.scrollTop) { // Explorer 6 Strict
+sx = document.documentElement.scrollLeft;
+sy = document.documentElement.scrollTop;
+}
+else if (document.body) { // all other Explorers
+sx = document.body.scrollLeft;
+sy = document.body.scrollTop;
+}
+t = y + o + tooltip.offsetHeight;
+w = sy + document.body.clientHeight;
+if (t > w) {
+y = y - o - tooltip.offsetHeight;
+}
+else {
+y = y + o;
+}
+t = x + o + tooltip.offsetWidth;
+w = sx + document.body.clientWidth;
+if (t > w) {
+x = x - o - tooltip.offsetWidth;
+}
+else {
+x = x + o;
+}
+if ((tooltip.style.top == '' || tooltip.style.top == 0) && (tooltip.style.left == '' || tooltip.style.left == 0))
+{
+tooltip.style.width = tooltip.offsetWidth + 'px';
+tooltip.style.height = tooltip.offsetHeight + 'px';
+}
+tooltip.style.left = x + "px";
+tooltip.style.top = y + "px";
+}
+} catch (error) { error = null; }
+}
+function showTooltip(id) {
+try {
+tooltip = document.getElementById(id);
+tooltip.style.display = "block";
+} catch (error) { error = null; }
+}
+function hideTooltip() {
+try {
+tooltip.style.display = "none";
+} catch (error) { error = null; }
+}
+</script>
+
+<div class="tooltip" id="e0">Steuerbefehl / Statusanfrage</div>
+<div class="tooltip" id="e1">Konfigurationsdatei</div>
+<div class="tooltip" id="e2">Sensordaten</div>
+<div class="tooltip" id="e3">Aktordaten</div>
+
+<map name="image1_1">
+  <area shape="poly" coords="495,132,481,141,484,146,481,141,464,151,467,155,465,150,448,158,450,162,449,158,432,163,433,168,432,163,415,166,416,171,416,166,399,167,399,172,400,167,383,166,383,171,383,166,367,163,366,167,367,163,350,157,349,162,351,158,334,150,332,155,334,150,318,141,315,145,318,141,310,136,304,144,312,149,312,149,313,150,329,159,330,159,330,159,347,167,347,167,347,167,364,172,364,172,365,172,382,176,382,176,382,176,399,177,399,177,400,177,417,176,417,176,417,176,434,173,434,172,435,172,451,167,452,167,452,167,469,160,469,159,469,159,486,150,486,150,487,150,501,140,495,132,495,132" alt="" onmouseover="showTooltip('e3')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="304,77,318,67,315,63,318,67,335,58,332,54,334,58,351,51,349,46,350,51,367,46,366,41,367,46,384,43,383,38,383,43,400,42,400,37,399,42,416,43,416,38,416,43,432,46,433,41,432,46,449,51,450,46,448,51,465,58,467,54,465,58,481,68,484,63,481,67,489,73,495,65,487,59,487,59,486,59,470,49,469,49,469,49,452,42,452,42,452,42,435,36,435,36,434,36,417,33,417,33,417,33,400,32,400,32,399,32,382,33,382,33,382,33,365,36,365,36,364,36,348,41,347,41,347,42,330,49,330,49,330,49,313,59,313,59,312,59,298,69,304,77,304,77" alt="" onmouseover="showTooltip('e2')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="74,99,187,105,187,95,75,90,74,99,74,99" alt="" onmouseover="showTooltip('e1')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="724,90,612,95,612,105,725,100,724,90,724,90" alt="" onmouseover="showTooltip('e0')" onmouseout="hideTooltip()"/>
+  <area shape="rect" coords="465,68,605,141" href="D:\6. Semester\Echtzeitbetriebssysteme\dfd1_steuerung.graphml" alt="" target="_blank"/>
+  <area shape="rect" coords="195,68,335,141" href="D:\6. Semester\Echtzeitbetriebssysteme\dfd1_simulation.graphml" alt="" target="_blank"/>
+</map>
+
+
+    <table class="yimagetable" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td><img class="yimage" src="dfd01_1.png" usemap="#image1_1" border="0" alt=""/></td>
+      </tr>
+    </table>
+
+</body>
+</html>

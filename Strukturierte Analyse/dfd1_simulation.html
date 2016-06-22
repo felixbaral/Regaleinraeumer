@@ -1,0 +1,123 @@
+<html>
+<head><title>Image map created by yEd</title>
+<style type="text/css">
+.tooltip {
+  font-size:10pt;
+  background-color:#FFFFCC;
+  border:1px solid black;
+  padding:2px
+}
+</style>
+<style type="text/css">
+.tooltip {
+  position:absolute;
+  display:none
+}
+</style>
+</head>
+<body>
+
+<script type="text/javascript">
+tooltip = null;
+document.onmousemove = updateTooltip;
+function updateTooltip(e) {
+try {
+if (document.all) {
+if (document.documentElement && document.documentElement.scrollTop) { // Explorer 6 Strict
+x = document.documentElement.scrollLeft + window.event.x;
+y = document.documentElement.scrollTop + window.event.y;
+}
+else { // all other Explorers
+x = document.body.scrollLeft + window.event.x;
+y = document.body.scrollTop + window.event.y;
+}
+}
+else {
+x = e.pageX;
+y = e.pageY;
+}
+if (tooltip != null) {
+o = 20;
+var sx, sy;
+if (self.pageYOffset) { // all except Explorer
+sx = self.pageXOffset;
+sy = self.pageYOffset;
+}
+else if (document.documentElement && document.documentElement.scrollTop) { // Explorer 6 Strict
+sx = document.documentElement.scrollLeft;
+sy = document.documentElement.scrollTop;
+}
+else if (document.body) { // all other Explorers
+sx = document.body.scrollLeft;
+sy = document.body.scrollTop;
+}
+t = y + o + tooltip.offsetHeight;
+w = sy + document.body.clientHeight;
+if (t > w) {
+y = y - o - tooltip.offsetHeight;
+}
+else {
+y = y + o;
+}
+t = x + o + tooltip.offsetWidth;
+w = sx + document.body.clientWidth;
+if (t > w) {
+x = x - o - tooltip.offsetWidth;
+}
+else {
+x = x + o;
+}
+if ((tooltip.style.top == '' || tooltip.style.top == 0) && (tooltip.style.left == '' || tooltip.style.left == 0))
+{
+tooltip.style.width = tooltip.offsetWidth + 'px';
+tooltip.style.height = tooltip.offsetHeight + 'px';
+}
+tooltip.style.left = x + "px";
+tooltip.style.top = y + "px";
+}
+} catch (error) { error = null; }
+}
+function showTooltip(id) {
+try {
+tooltip = document.getElementById(id);
+tooltip.style.display = "block";
+} catch (error) { error = null; }
+}
+function hideTooltip() {
+try {
+tooltip.style.display = "none";
+} catch (error) { error = null; }
+}
+</script>
+
+<div class="tooltip" id="e3">Task-Spawn</div>
+<div class="tooltip" id="e4">Sensorstatus</div>
+<div class="tooltip" id="e5">Sensorstatus</div>
+<div class="tooltip" id="e6">Sensorstatus</div>
+<div class="tooltip" id="e7">Sensorstatus</div>
+<div class="tooltip" id="e8">Queueinhalt</div>
+<div class="tooltip" id="e9">Queue leeren</div>
+<div class="tooltip" id="e10">Sensordaten</div>
+<div class="tooltip" id="e14">Positionsdaten</div>
+
+<map name="image1_1">
+  <area shape="poly" coords="154,60,312,60,405,61,484,63,552,66,608,71,655,77,656,72,655,77,693,86,694,81,693,86,709,91,711,86,709,91,723,97,725,92,723,96,736,103,738,98,736,103,747,110,750,106,747,110,757,118,760,114,756,117,765,126,769,123,765,126,773,136,777,132,773,135,780,146,784,143,779,145,791,169,796,167,791,169,800,197,805,195,800,196,807,222,807,222,817,220,817,219,810,194,810,194,810,194,800,166,800,165,800,165,788,141,788,141,788,140,781,130,781,130,781,129,773,120,773,119,772,119,763,110,763,110,763,110,753,102,753,102,752,102,741,94,741,94,740,94,727,87,727,87,727,87,712,81,712,81,712,81,696,76,696,76,695,76,657,67,657,67,656,67,609,61,552,56,484,53,405,51,312,50,155,50,154,60,154,60" alt="" onmouseover="showTooltip('e14')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="547,571,547,619,557,619,557,571,547,571,547,571" alt="" onmouseover="showTooltip('e10')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="533,499,529,488,524,490,529,489,527,474,522,475,527,475,529,460,524,460,529,461,534,446,529,445,534,447,535,444,527,439,525,442,525,442,525,443,519,458,519,459,519,459,517,474,517,475,517,475,519,490,519,491,519,491,523,502,533,499,533,499" alt="" onmouseover="showTooltip('e9')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="547,435,547,490,557,490,557,435,547,435,547,435" alt="" onmouseover="showTooltip('e8')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="792,295,786,301,790,304,787,300,778,306,781,310,779,306,768,311,771,316,769,311,756,317,758,321,756,316,742,321,725,326,707,330,686,333,667,336,646,340,628,344,611,348,597,353,597,353,597,353,586,359,585,359,585,359,576,365,576,365,575,365,569,371,568,372,568,372,565,375,565,375,565,376,563,379,563,379,563,379,560,385,569,389,572,384,567,382,572,384,574,381,569,378,573,381,576,378,572,375,575,379,582,373,579,369,581,373,590,367,588,363,590,368,601,362,599,358,601,363,614,358,630,353,648,349,669,346,688,343,709,339,728,335,745,331,760,326,760,326,760,326,773,320,773,320,773,320,784,315,784,314,784,314,793,308,793,308,793,308,799,302,792,295,792,295" alt="" onmouseover="showTooltip('e7')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="533,300,534,301,540,308,544,304,540,307,545,315,549,312,545,314,549,322,553,320,548,321,552,330,556,328,551,329,554,338,558,337,553,337,555,346,560,346,555,346,555,355,560,355,555,355,554,365,551,385,561,387,564,366,565,356,565,355,565,355,565,346,565,345,565,345,563,336,563,336,563,335,561,327,561,326,561,326,558,318,558,318,558,317,553,309,553,309,553,309,548,302,548,301,547,301,541,294,540,293,533,300,533,300" alt="" onmouseover="showTooltip('e6')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="350,301,350,314,350,319,350,319,350,320,351,324,351,325,351,325,352,329,352,330,352,330,354,334,354,334,355,334,357,338,357,338,357,339,360,342,360,342,361,342,364,345,364,346,365,346,369,349,369,349,369,349,374,351,374,351,374,351,379,353,379,354,380,354,391,357,391,357,392,357,405,359,406,359,406,359,422,359,437,360,467,360,480,361,490,363,499,365,500,360,499,365,506,367,508,362,506,367,512,369,514,365,511,369,515,372,518,368,514,372,517,375,524,381,529,388,531,390,535,387,531,390,531,390,539,385,539,385,539,385,539,384,537,382,531,375,525,368,522,364,521,364,521,364,517,361,516,361,516,360,510,358,510,357,509,357,502,355,502,355,501,355,492,353,481,351,468,350,437,350,422,350,406,349,406,354,407,349,393,347,392,352,394,347,382,344,381,349,383,344,378,342,376,347,378,342,374,340,371,344,374,340,370,338,367,342,371,338,367,335,364,339,368,335,365,332,361,335,365,333,363,329,359,332,363,330,361,326,357,328,362,326,360,322,356,323,360,323,360,318,355,319,360,319,359,314,360,301,350,301,350,301" alt="" onmouseover="showTooltip('e5')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="200,301,200,314,199,314,200,314,200,319,200,320,200,320,202,325,202,325,202,326,204,330,205,331,205,331,208,335,209,335,209,336,213,339,213,339,214,340,219,343,219,343,219,343,226,346,226,346,226,346,233,349,233,349,233,349,242,352,251,354,251,354,251,354,272,357,272,357,272,357,297,359,326,359,353,360,382,360,408,361,431,363,452,366,470,370,471,365,470,370,485,374,486,370,484,374,497,380,499,375,497,380,502,383,505,378,502,382,506,386,516,393,522,385,512,378,507,374,507,374,507,374,502,371,501,371,501,371,488,365,488,365,488,365,472,360,472,360,472,360,454,356,433,353,409,351,382,350,353,350,326,350,298,349,273,347,273,352,274,347,253,344,252,349,253,344,244,342,236,340,235,344,237,340,230,337,228,342,230,337,224,334,222,339,224,334,219,331,216,335,220,332,215,328,212,332,216,329,213,325,209,328,213,325,211,321,206,323,211,322,210,317,205,319,210,318,209,314,205,314,210,314,210,301,200,301,200,301" alt="" onmouseover="showTooltip('e4')" onmouseout="hideTooltip()"/>
+  <area shape="poly" coords="884,136,857,143,844,147,844,147,844,147,833,152,833,152,833,153,824,159,824,159,823,159,820,163,819,163,819,163,816,167,816,167,816,167,813,171,813,171,813,171,811,176,811,176,811,176,809,181,809,181,809,181,808,186,807,186,807,186,807,191,807,191,807,192,806,197,806,197,806,198,807,209,808,209,808,209,810,221,820,219,817,207,812,208,817,208,816,197,811,197,816,197,817,192,812,192,817,193,817,188,812,187,817,188,818,184,814,182,818,184,820,180,815,178,820,180,822,176,817,174,822,177,824,173,820,170,824,173,827,169,823,166,827,170,830,166,827,163,830,167,838,161,835,157,838,161,848,156,846,152,848,156,860,152,886,145,884,136,884,136" alt="" onmouseover="showTooltip('e3')" onmouseout="hideTooltip()"/>
+</map>
+
+
+    <table class="yimagetable" cellspacing="0" cellpadding="0" border="0">
+      <tr>
+        <td><img class="yimage" src="dfd1_simulation1_1.png" usemap="#image1_1" border="0" alt=""/></td>
+      </tr>
+    </table>
+
+</body>
+</html>
