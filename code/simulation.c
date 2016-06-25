@@ -1,22 +1,5 @@
 #include "simulation.h"
 
-bool triggersX(int x)
-{
-	if(towerPositionX == x) return true;
-	return false;
-}
-bool triggersY(int y)
-{
-	if(towerPositionY == y) return true;
-	return false;
-}
-bool triggersZ(int z)
-{
-	if(towerPositionZ == z) return true;
-	return false;
-}
-
-
 /*
  * Typ: 
  * 1: x,y-Sensoren
@@ -24,43 +7,82 @@ bool triggersZ(int z)
  * 3: Lichtschranken
  * 4: Lichttaster
  */
+
+
+bool triggersX(int x)
+{
+	if(towerPositionX == x) return true;
+	return false;
+}
+
+bool triggersY(int y)
+{
+	if(towerPositionY == y) return true;
+	return false;
+}
+
+bool triggersZ(int z)
+{
+	if(towerPositionZ == z) return true;
+	return false;
+}
+
 void sensor(int id)
 {
-	printf("Sensor started %d \n", id);
 	MessageQSensorresult returnValue;
-	Sensorresult result;
 	returnValue.result.id = id;
+	int triggerOffset;
 	
 	//TODO: die positionen zu beginn nur einmal ausrechnen
 	
-	printf("bla 1\n");
+	printf("Sensor #%d started \n", id);
+
+	if(id < 10)
+	{
+		// unten
+		if(id < 5)
+		{
+			triggerOffset = triggersY((id*2+1)*sensorDistanceY);
+		}
+		// oben
+		else
+		{
+			triggerOffset = triggersY((id-5)*2*sensorDistanceY);
+		}
+	}
+	// X-Achse
+	else if(id < 20)
+	{
+		triggerOffset = triggersX((id-10)*sensorDistanceX);
+	}
+	// Z-Achse
+	else if(id < 23)
+	{
+		//Z=0: Arm im Regal drinne
+		triggerOffset = triggersZ((id-20)*sensorDistanceZ);
+	}
+	// Lichtkram
+	else
+	{
+		//TODO:bla
+		//returnValue.result.value = 
+	}
+
+
+
 	while(1)
 	{
-		
-		// Y-Sensoren
-		if(id < 10)
+		if(id < 10)// Y-Sensoren
 		{
-			// unten
-			if(id < 5)
-			{
-				returnValue.result.value = triggersY((id*2+1)*sensorDistanceY);
-			}
-			// oben
-			else
-			{
-				returnValue.result.value = triggersY((id-5)*2*sensorDistanceY);
-			}
+			returnValue.result.value = triggersY(triggerOffset);
 		}
-		// X-Achse
-		else if(id < 20)
+		else if(id < 20)// X-Achse
 		{
-			returnValue.result.value = triggersX((id-10)*sensorDistanceX);
+			returnValue.result.value = triggersX(triggerOffset);
 		}
-		// Z-Achse
-		else if(id < 23)
-		{
-			//Z=0: Arm im Regal drinne
-			returnValue.result.value = triggersZ((id-20)*sensorDistanceZ);
+		else if(id < 23)// Z-Achse
+		{	//Z=0: Arm im Regal drinne
+			returnValue.result.value = triggersZ(triggerOffset);
 		}
 		// Lichtkram
 		else
@@ -68,13 +90,11 @@ void sensor(int id)
 			//TODO:bla
 			//returnValue.result.value = 
 		}
-		printf("bla 2\n");
 
 		if((msgQSend(mesgQueueId,&returnValue.charvalue,1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
-				printf("msgQSend in taskTwo failed\n");
+				printf("msgQSend in Sensor #%d failed\n", id);
 		
-		printf("I am %d\n", id);
-		taskDelay(20);
+		taskDelay(Delay_Time_Sensor);
 	}
 	
 	printf("i'm dead");
@@ -84,15 +104,20 @@ void sensor(int id)
 void SensorCollector(void){
 	printf("SensorCollector started \n");
 	
+
 	while(1){
 		MessageQSensorresult ValueToBus;
 		if(msgQReceive(mesgQueueId,&ValueToBus.charvalue,1, WAIT_FOREVER) == ERROR)
-			printf("msgQReceive in taskTwo failed\n");	
+			printf("msgQReceive in SensorCollector failed\n");	
 		else
-			printf("Message from %d \n",ValueToBus.result.id); 
-		//msgQDelete(mesgQueueId); /* delete message queue */
+			if (ValueToBus.result.bool){
+				printf("Sensor #%d ist 	++ aktiv ++\n",ValueToBus.result.id); 
+			}
+			else {
+				printf("Sensor #%d ist 	-- passiv --\n",ValueToBus.result.id); 	
+			}
 	
-	taskDelay(20);
+	taskDelay(Delay_Time_SensorCollector);
 	}
 }
 
@@ -102,13 +127,11 @@ void Sensorverwaltung(void)
 	
 	
 	/* create message queue */
-	if ((mesgQueueId = msgQCreate(maxMsgs,1,MSG_Q_FIFO))
+	if ((mesgQueueId = msgQCreate(MSG_Q_MAX_Messages,1,MSG_Q_FIFO))
 		== NULL)
 		printf("msgQCreate in failed\n");
 		
-	printf("messageQ created\n");
-
-	taskDelay(1000);
+	//printf("messageQ created\n");
 	
 	int i;
 	for (i=0; i < 2; i++)
@@ -118,10 +141,12 @@ void Sensorverwaltung(void)
 	
 	taskSpawn("SensorCollector", 120, 0x100, 2000, (FUNCPTR)SensorCollector, 0,0,0,0,0,0,0,0,0,0);
 	
+	//printf("Sensor & Sensorcollector gespawnt \n");
+
 	while(true)
 	{
-		
-	taskDelay(20);
+	//TODO: regelmäßige abfrage + weitersetzen	
+	taskDelay(Delay_Time_SensorVerwaltung);
 	}
 }
 
