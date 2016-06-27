@@ -39,7 +39,7 @@ void Sensorverwaltung(void)
 		// regelmaessige Abfrage + weitersetzen
 		semTake(semBinary_SteuerungToSimulation, WAIT_FOREVER); 
 			/*
-			 * TODO: Variable zwischenspeichern und nur kurzer Lock 
+			 * TODO: Variable zwischenspeichern und nur kurzer Lock
 			 * oder ohne kopieren und mit langem Lock
 			 * sieht vielleicht besser aus ...?
 			 */
@@ -184,9 +184,8 @@ void SensorCollector(void){
 	printf("Start: Task - SensorCollector \n");
 
 	/* create message queue */
-	if ((mesgQueueIdSensorData = msgQCreate(MSG_Q_MAX_Messages,5,MSG_Q_FIFO))	== NULL){
-		printf("msgQCreate in failed\n");
-	}
+	if ((mesgQueueIdSensorData = msgQCreate(MSG_Q_MAX_Messages,5,MSG_Q_FIFO))	== NULL)
+		printf("msgQCreate in SensorCollector failed\n");
 	else{
 		//printf("messageQ-SensorData created\n");
 	}
@@ -194,40 +193,29 @@ void SensorCollector(void){
 	sbusdata sensorBusData;
 	
 	//test start
-	sensorBusData.l=0;
-	sensorBusData.l--;
-	sensorBusData.sbits.x1 = 1;
-	sensorBusData.sbits.x2 = 0;
-	sensorBusData.sbits.x3 = 1;
-	printf("test start \n%d \n", sensorBusData.sbits.x1);
-	printf("%d \n", sensorBusData.sbits.x2);
-	printf("%d \n", sensorBusData.sbits.x3);
-	sensorBusData.index[10] = 1;
-	sensorBusData.index[11] = 1;
-	sensorBusData.index[12] = 1;
-	printf("\n%d \n", sensorBusData.sbits.x1);
-	printf("%d \n", sensorBusData.sbits.x2);
-	printf("%d \n", sensorBusData.sbits.x3);
-	taskDelay(1000);
+	//sensorBusData.l = sensorBusData.l | (1 << 11); 
+	//sensorBusData.l = sensorBusData.l & (~(1 << 10));
 	//test end
 		
 	while(1){
 		MessageQSensorresult ValueToBus;
-		if (msgQNumMsgs(mesgQueueIdSensorCollector) > 0)
+		if (msgQNumMsgs(mesgQueueIdSensorCollector) > 0) //TODO: lieber mit WHILE - in einem Rutsch alle Verarbeiten?
 		{
 			if(msgQReceive(mesgQueueIdSensorCollector, &ValueToBus.charvalue, 1, WAIT_FOREVER) == ERROR)
-			{
 				printf("msgQReceive in SensorCollector failed\n");
-			}
 			else
 			{
 				if (ValueToBus.result.value){
-					printf("Sensor #%d ist 	++ aktiv ++\n",ValueToBus.result.id);
+					//printf("Sensor #%d ist 	++ aktiv ++\n",ValueToBus.result.id);
+					sensorBusData.l &= ~(1<<ValueToBus.result.id);
 					
 				}
 				else {
-					printf("Sensor #%d ist 	-- passiv --\n",ValueToBus.result.id); 	
+					//printf("Sensor #%d ist 	-- passiv --\n",ValueToBus.result.id);
+					sensorBusData.l |= (1<<ValueToBus.result.id);
 				}
+				if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
+					printf("msgQSend in SensorCollector failed\n", id);			
 			}
 		}
 		
