@@ -170,10 +170,8 @@ void Simulation_Sensor(int id)
 		}
 
 		if((msgQSend(mesgQueueIdSensorCollector,&returnValue.charvalue, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
-		{
 			printf("msgQSend in Sensor #%d failed\n", id);			
-		}
-		
+				
 		taskDelay(Delay_Time_Simulation_Sensor);
 	}	
 }

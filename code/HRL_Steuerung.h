@@ -10,10 +10,12 @@
  *      Author: Zauberer
  */
 
-bool shutdown_HRL_Steuerung;
-bool belegungsMatrix[10][5];
+#define PositionXinput 1;
+#define PositionYinput 1; 
+#define PositionXOutput 8;
+#define PositionYOutput 1; 
 
-// CMD Queue
+// Msg-Queue
 MSG_Q_ID mesgQueueIdCmd;
 #define MSG_Q_CMD_MAX_Messages 200
 typedef struct {
@@ -22,14 +24,13 @@ typedef struct {
 	UINT x			: 4; //1-10 (16)
 	UINT y			: 3; //1-5  (8)
 } commandbits;
-
 typedef union{
 	char charvalue[2];
 	commandbits bits;
 } cmdQdata;
 
-//Aktordaten - Steuerung zu Simulation
-SEM_ID semBinary_AktorDataPush;
-abusdata AktorDataPush;
+//--------------------------------------
+
+void HRL_Steuerung_init();
 
 #endif /*HRL_STEUERUNG*/
