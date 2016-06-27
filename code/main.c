@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <readcommand.h>
-#include "simulation.h"
+//#include "simulation.h"
+#include "HRL_Steuerung.h"
+
 
 main(void){
 	printf("Hallo Andreas \n");
@@ -10,7 +12,7 @@ main(void){
 	int zahl;
 	
 	//testcmd = readcommand(testchar);
-	Sensorverwaltung();
+	Simulation_init();
 	fflush(stdout);
 	//scanf("%d", &zahl);
 	//printf("%d", zahl);

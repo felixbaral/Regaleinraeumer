@@ -5,8 +5,12 @@
  *      Author: Oliver Jack
  */
 
-#ifndef READCOMMAND_H_
-#define READCOMMAND_H_
+#ifndef DOUBLE_INCLUDE_CHECK_READCOMMAND
+#define DOUBLE_INCLUDE_CHECK_READCOMMAND
+
+//MessageQueue
+#define MEG_Q_Job_MAX_Messages 200
+MSG_Q_ID mesgQueueIdJob;
 
 typedef enum {false, true} bool;
 typedef struct {
@@ -18,4 +22,4 @@ typedef struct {
 
 command readcommand(char *cmd);
 
-#endif /* READCOMMAND_H_ */
+#endif /* DOUBLE_INCLUDE_CHECK_READCOMMAND_H_ */

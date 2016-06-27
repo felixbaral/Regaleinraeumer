@@ -8,30 +8,46 @@
  * 4: Lichttaster
  */
 
+void Simulation_Sensorverwaltung(void);
+void Simulation_Sensor(int id);
+void Simulation_SensorCollector(void);
+bool triggersX(int x);
+bool triggersY(int y);
+bool triggersZ(int z);
 
-void Sensorverwaltung(void)
-{
-	printf("Start: Task - Sensorverwaltung \n");
-	
+
+void Simulation_init(void){
+	printf("Start: Simulation \n");
+		
 	/* create message queue */
 	if ((mesgQueueIdSensorCollector = msgQCreate(MSG_Q_MAX_Messages,1,MSG_Q_FIFO))	== NULL)
 		printf("msgQCreate in failed\n");
-	//printf("messageQ created\n");
+	//printf("messageQ SensorCollector created\n");
+	
+	if ((mesgQueueIdSensorData = msgQCreate(MSG_Q_MAX_Messages,5,MSG_Q_FIFO))	== NULL)
+		printf("msgQCreate in SensorCollector failed\n");
+	//printf("messageQ-SensorData created\n");
+	
 	
 	/*create Binary Semaphore*/
 	semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO, SEM_FULL);
 	//printf("Semaphore für Simulation <-> Steuerung erstellt");
 	
+	taskSpawn("SensorVerwaltung", 120, 0x100, 2000, (FUNCPTR)Simulation_Sensorverwaltung, 0,0,0,0,0,0,0,0,0,0);
+	taskSpawn("SensorCollector", 120, 0x100, 2000, (FUNCPTR)Simulation_SensorCollector, 0,0,0,0,0,0,0,0,0,0);
+		
 	int i;
 	for (i=0; i < 26; i++)
 	{
-		taskSpawn("Sensor",110,0x100,2000,(FUNCPTR)sensor,i,0,0,0,0,0,0,0,0,0);
+		taskSpawn("Sensor",120,0x100,2000,(FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
 	}
-	
-	taskSpawn("SensorCollector", 120, 0x100, 2000, (FUNCPTR)SensorCollector, 0,0,0,0,0,0,0,0,0,0);
-	
 	//printf("Sensor & Sensorcollector gespawnt \n");
+	
+}
 
+void Simulation_Sensorverwaltung(void)
+{
+	printf("Start: Task - Sensorverwaltung \n");
 	abusdata AktorBusData;
 	int direction;
 	while(true)
@@ -87,11 +103,11 @@ void Sensorverwaltung(void)
 		//TODO: Slave3
 		
 		
-		taskDelay(Delay_Time_SensorVerwaltung);
+		taskDelay(Delay_Time_Simulation_SensorVerwaltung);
 	}
 }
 
-void sensor(int id)
+void Simulation_Sensor(int id)
 {
 	MessageQSensorresult returnValue;
 	returnValue.result.id = id;
@@ -158,7 +174,7 @@ void sensor(int id)
 			printf("msgQSend in Sensor #%d failed\n", id);			
 		}
 		
-		taskDelay(Delay_Time_Sensor);
+		taskDelay(Delay_Time_Simulation_Sensor);
 	}	
 }
 
@@ -180,28 +196,16 @@ bool triggersZ(int z)
 	return false;
 }
 
-void SensorCollector(void){
-	printf("Start: Task - SensorCollector \n");
-
-	/* create message queue */
-	if ((mesgQueueIdSensorData = msgQCreate(MSG_Q_MAX_Messages,5,MSG_Q_FIFO))	== NULL)
-		printf("msgQCreate in SensorCollector failed\n");
-	else{
-		//printf("messageQ-SensorData created\n");
-	}
-	
+void Simulation_SensorCollector(void){
 	sbusdata sensorBusData;
 	
-	//test start
-	//sensorBusData.l = sensorBusData.l | (1 << 11); 
-	//sensorBusData.l = sensorBusData.l & (~(1 << 10));
-	//test end
-		
-	while(1){
+	printf("Start: Task - SensorCollector \n");
+	while(1)
+	{
 		MessageQSensorresult ValueToBus;
 		if (msgQNumMsgs(mesgQueueIdSensorCollector) > 0) //TODO: lieber mit WHILE - in einem Rutsch alle Verarbeiten?
 		{
-			if(msgQReceive(mesgQueueIdSensorCollector, &ValueToBus.charvalue, 1, WAIT_FOREVER) == ERROR)
+			if(msgQReceive(mesgQueueIdSensorCollector, &ValueToBus.charvalue, 1, WAIT_FOREVER) == ERROR) // TODO: wird der Process austomatisch abgegeben beim wait?
 				printf("msgQReceive in SensorCollector failed\n");
 			else
 			{
@@ -215,10 +219,10 @@ void SensorCollector(void){
 					sensorBusData.l |= (1<<ValueToBus.result.id);
 				}
 				if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
-					printf("msgQSend in SensorCollector failed\n", id);			
+					printf("msgQSend in SensorCollector failed\n");			
 			}
 		}
 		
-	taskDelay(Delay_Time_SensorCollector);
+	taskDelay(Delay_Time_Simulation_SensorCollector);
 	}
 }

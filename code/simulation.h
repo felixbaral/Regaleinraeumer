@@ -1,19 +1,21 @@
+#ifndef DOUBLE_INCLUDE_CHECK_SIMULATION
+#define DOUBLE_INCLUDE_CHECK_SIMULATION
+
 #include "taskLib.h"
 #include "semLib.h"
-#include "stdio.h"
-#include "vxWorks.h"
-#include <readcommand.h>
 #include "msgQLib.h"
 #include "busdata.h"
-
-//Aktordaten - Steuerung zu Simulation
-SEM_ID semBinary_SteuerungToSimulation;
-abusdata SteuerungToSimulation ;
+#include "readcommand.h"
 
 //Task-Frequency
-#define Delay_Time_Sensor 20
-#define Delay_Time_SensorCollector 20 //sollte 1/26 von Delay_Time_Sensor sein
-#define Delay_Time_SensorVerwaltung 20
+#define Delay_Time_Simulation_Sensor 20
+#define Delay_Time_Simulation_SensorCollector 20 //sollte 1/26 von Delay_Time_Sensor sein
+#define Delay_Time_Simulation_SensorVerwaltung 20
+
+//Task-Priority
+#define Priority_Simulation_Sensor 100
+#define Priority_Simulation_SensorCollector 100
+#define Priority_Simulation_SensorVerwaltung 100
 
 // 3D- Tower Navi
 #define sensorDistanceX 10
@@ -23,10 +25,16 @@ int towerPositionX;
 int towerPositionY;
 int towerPositionZ;
 
+//Aktordaten - Steuerung zu Simulation (global)
+SEM_ID semBinary_SteuerungToSimulation;
+abusdata SteuerungToSimulation; //used global
+
 // MessageQueue
 #define MSG_Q_MAX_Messages 200
 MSG_Q_ID mesgQueueIdSensorCollector;
 MSG_Q_ID mesgQueueIdSensorData;
+
+
 // Struct for Bus-Communication
 typedef struct {
 	UINT id :7;
@@ -40,10 +48,6 @@ typedef union {
 
 
 //------------------------------------------
+void Simulation_init(void);
 
-void Sensorverwaltung(void);
-void sensor(int id);
-void SensorCollector(void);
-bool triggersX(int x);
-bool triggersY(int y);
-bool triggersZ(int z);
+#endif /* DOUBLE_INCLUDE_CHECK_SIMULATION */
