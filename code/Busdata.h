@@ -1,12 +1,12 @@
+#ifndef BUSDATA_H_
+#define BUSDATA_H_
+
 /*
  * Busdata.h
  *
  *  Created on: 05.01.2010
  *      Author: Oliver Jack
  */
-
-#ifndef BUSDATA_H_
-#define BUSDATA_H_
 
 #define UINT unsigned int
 #define MAX_MESSAGES 3

@@ -2,6 +2,7 @@
 #define DOUBLE_INCLUDE_CHECK_HRL_STEUERUNG
 
 #include "simulation.h"
+#include "Busdata.h"
 
 /*
  * HRL_Steuerung.h

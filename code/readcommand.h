@@ -1,3 +1,6 @@
+#ifndef DOUBLE_INCLUDE_CHECK_READCOMMAND
+#define DOUBLE_INCLUDE_CHECK_READCOMMAND
+
 /*
  * readcommand.h
  *
@@ -5,8 +8,6 @@
  *      Author: Oliver Jack
  */
 
-#ifndef DOUBLE_INCLUDE_CHECK_READCOMMAND
-#define DOUBLE_INCLUDE_CHECK_READCOMMAND
 
 //MessageQueue
 #define MEG_Q_Job_MAX_Messages 200
@@ -20,6 +21,6 @@ typedef struct {
 	int par2;
 } command;
 
-command readcommand(char *cmd);
+command readcommand();
 
 #endif /* DOUBLE_INCLUDE_CHECK_READCOMMAND_H_ */

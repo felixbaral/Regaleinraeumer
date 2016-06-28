@@ -7,6 +7,14 @@
  *      Author: Zauberer
  */
 
+#define DontMove 0
+#define Z_IO 3
+#define Z_Middle 2
+#define Z_Inside 1
+#define Carry_Get 1;
+#define Carry_Give 0;
+#define IO_
+
 bool shutdown_HRL_Steuerung;
 bool TurmPause = false;
 bool belegungsMatrix[10][5];
@@ -18,12 +26,12 @@ int lastInputState;
 int lastCarryState;
 
 typedef struct {
-	UINT x;
-	UINT y;
-	UINT z;
-	UINT input;
-	UINT output;
-	UINT carry;
+	int x;
+	int y;
+	int z;
+	int input;
+	int output;
+	int carry;
 } NextMovement;
 
 typedef union{
@@ -33,8 +41,6 @@ typedef union{
 
 MSG_Q_ID mesgQueueIdNextMovement;
 MSG_Q_ID mesgQueueIdAktorDataPush;
-abusdata AktorDataPush;
-
 
 void HRL_Steuerung_AktorDataPush();
 void HRL_Steuerung_GetNewJob();
@@ -43,9 +49,7 @@ void HRL_Steuerung_GetNewJob_Qsend();
 
 void HRL_Steuerung_init(){
 	printf("Start: HRL-Steuerung \n");
-	
-	// Aktor Data Push
-	taskSpawn("HRL_Steuerung_AktorDataPush",120,0x100,2000,(FUNCPTR)HRL_Steuerung_AktorDataPush,0,0,0,0,0,0,0,0,0,0);
+	//TODO: Abbruch bei Fehlern
 	
 	if ((mesgQueueIdNextMovement = msgQCreate(5,3,MSG_Q_FIFO))	== NULL)
 		printf("msgQCreate (NextMovement) in HRL_Steuerung_init failed\n");
@@ -53,18 +57,25 @@ void HRL_Steuerung_init(){
 	if ((mesgQueueIdCmd = msgQCreate(MSG_Q_CMD_MAX_Messages,1,MSG_Q_PRIORITY))	== NULL)
 		printf("msgQCreate (CMD) in HRL_Steuerung_init failed\n");
 	
+	// Aktor Data Push
 	if ((mesgQueueIdAktorDataPush = msgQCreate(2,1,MSG_Q_FIFO))	== NULL)
 		printf("msgQCreate (AktorDataPush) in HRL_Steuerung_init failed\n");
+	else
+		taskSpawn("HRL_Steuerung_AktorDataPush",120,0x100,2000,(FUNCPTR)HRL_Steuerung_AktorDataPush,0,0,0,0,0,0,0,0,0,0);
+	
 }
 
 void HRL_Steuerung_AktorDataPush(){
+	abusdata transmit;
 	while (!shutdown_HRL_Steuerung){
-	//	if(msgQReceive(mesgQueueIdAktorDataPush, &ValueToBus.charvalue, 1, WAIT_FOREVER) == ERROR) 
-			printf("msgQReceive in SensorCollector failed\n");
-		
-		semTake(semBinary_SteuerungToSimulation, WAIT_FOREVER); 
-		SteuerungToSimulation = AktorDataPush;
-		semGive(semBinary_SteuerungToSimulation);
+		//TODO: Timeout nutzen für Systemshutdown
+		if(msgQReceive(mesgQueueIdAktorDataPush, transmit.amsg, sizeof(transmit.amsg), WAIT_FOREVER) == ERROR) 
+			printf("msgQReceive in HRL_Steuerung_AktorDataPush failed\n");
+		else{
+			semTake(semBinary_SteuerungToSimulation, WAIT_FOREVER); 
+			SteuerungToSimulation = transmit;
+			semGive(semBinary_SteuerungToSimulation);
+		}
 	}
 }
 
@@ -78,24 +89,33 @@ void HRL_Steuerung_GetNewJob()
 		if( msgQNumMsgs(mesgQueueIdCmd) == 0){
 			// Pause-Modus einleiten - Timeout 
 			TurmPause = true;
-			next3D = HRL_Steuerung_GetNewJob_StopState();
-			next3D.x = PositionXinput;
-			next3D.y = PositionYinput;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			if (!TurmPause){
+				next3D = HRL_Steuerung_GetNewJob_StopState();
+				next3D.x = PositionXinput;
+				next3D.y = PositionYinput;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+			}
 		}
 	}
 	else{
 		if (cmdData.bits.highprio){
 			belegungsMatrix[cmdData.bits.x][cmdData.bits.y] = cmdData.bits.cmd;
 		}else if (cmdData.bits.cmd){//insert xy
-			/*next3D = HRL_Steuerung_GetNewJob_StopState();
+			next3D = HRL_Steuerung_GetNewJob_StopState();
 			next3D.x = PositionXinput;
 			next3D.y = PositionYinput;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			
-			next3D.x = PositionXinput;
-			next3D.y = PositionYinput;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);*/
+			next3D = HRL_Steuerung_GetNewJob_StopState();
+			next3D.z = 3;
+			next3D.input = 2;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
+			next3D = HRL_Steuerung_GetNewJob_StopState();
+			next3D.carry = 1;
+			next3D.input = 1;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 		}else{
 			//add remove
 		}
@@ -103,12 +123,12 @@ void HRL_Steuerung_GetNewJob()
 }
 
 NextMovement HRL_Steuerung_GetNewJob_StopState(){ //TODO: müsste eigentlich nach Fall berechnet werden - besprechen
-	NextMovement returnValue;
-	returnValue.input=lastInputState;
-	returnValue.output=lastOutputState;
-	returnValue.x=lastSensorX;
-	returnValue.y=lastSensorY;
-	returnValue.z=lastSensorZ;
+	NextMovement returnValue; // 0=stop für den Motor; 0<sensorwert-1
+	returnValue.input=0;
+	returnValue.output=0;
+	returnValue.x=0;
+	returnValue.y=0;
+	returnValue.z=0;
 
 	return returnValue;
 }
