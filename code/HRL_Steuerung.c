@@ -6,17 +6,16 @@
  *  Created on: 27.06.2016
  *      Author: Zauberer
  */
-
-#define DontMove 0
-#define Z_IO 3
-#define Z_Middle 2
-#define Z_Inside 1
-#define Carry_Get 1;
-#define Carry_Give 0;
-#define IO_
+#define DontCare (-1)
+#define Z_IO 2
+#define Z_Middle 1
+#define Z_Inside 0
+#define Carry_Get 1
+#define Carry_Give 0
+#define IO_GetBreak 1
+#define IO_GetFree 0
 
 bool shutdown_HRL_Steuerung;
-bool TurmPause = false;
 bool belegungsMatrix[10][5];
 int lastSensorX;
 int lastSensorY;
@@ -29,8 +28,7 @@ typedef struct {
 	int x;
 	int y;
 	int z;
-	int input;
-	int output;
+	int IO;
 	int carry;
 } NextMovement;
 
@@ -43,8 +41,10 @@ MSG_Q_ID mesgQueueIdNextMovement;
 MSG_Q_ID mesgQueueIdAktorDataPush;
 
 void HRL_Steuerung_AktorDataPush();
+void HRL_Steuerung_Movement();
+sbusdata HRL_Steuerung_Movement_GetSensorBusData();
 void HRL_Steuerung_GetNewJob();
-NextMovement HRL_Steuerung_GetNewJob_StopState();
+NextMovement HRL_Steuerung_GetNewJob_DontCareState();
 void HRL_Steuerung_GetNewJob_Qsend();
 
 int HRL_Steuerung_init(){
@@ -92,6 +92,43 @@ void HRL_Steuerung_AktorDataPush(){
 	}
 }
 
+void HRL_Steuerung_Movement(){
+	while(1){
+		
+	}
+}
+
+sbusdata HRL_Steuerung_Movement_GetSensorBusData(){
+	sbusdata returnvalue;
+	int i, errorcount;
+	if(msgQReceive(mesgQueueIdSensorData, returnvalue.smsg, sizeof(returnvalue.smsg), WAIT_FOREVER) == ERROR){ 
+		printf("msgQReceive in HRL_Steuerung_Movement_GetSensorBusData failed\n");
+		returnvalue.l = 0;
+	}
+	else{
+		//prüfen ob möglich
+//		returnvalue.sbits.
+		
+		// x-Achse
+		errorcount= (-1);
+		for (i = 0; i < 10; i++) {
+			if ( (returnvalue.sgroups.sX & (1<i) ) == 0)
+			{
+				lastSensorX = i;
+				errorcount++;
+			}
+		}
+		if (errorcount<1){
+			//alles ok
+		}
+		
+		
+		
+		
+	}
+	return returnvalue;
+}
+
 void HRL_Steuerung_GetNewJob()
 {
 	//obere Prio zuerst //danach normal
@@ -101,47 +138,102 @@ void HRL_Steuerung_GetNewJob()
 	if(msgQReceive(mesgQueueIdCmd, cmdData.charvalue, 1, 350) == ERROR) {//etwa 5 Sekunden Timeout
 		if( msgQNumMsgs(mesgQueueIdCmd) == 0){
 			// Pause-Modus einleiten - Timeout 
-			TurmPause = true;
-			if (!TurmPause){
-				next3D = HRL_Steuerung_GetNewJob_StopState();
-				next3D.x = PositionXinput;
-				next3D.y = PositionYinput;
-				HRL_Steuerung_GetNewJob_Qsend(next3D);
-			}
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.x = PositionXinput;
+			next3D.y = PositionYinput;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+	
 		}
 	}
 	else{
 		if (cmdData.bits.highprio){
 			belegungsMatrix[cmdData.bits.x][cmdData.bits.y] = cmdData.bits.cmd;
 		}else if (cmdData.bits.cmd){//insert xy
-			next3D = HRL_Steuerung_GetNewJob_StopState();
+			// 1 - zum Einlader
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = PositionXinput;
 			next3D.y = PositionYinput;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			next3D = HRL_Steuerung_GetNewJob_StopState();
-			next3D.z = 3;
-			next3D.input = 2;
+			// 2 - Arm ausfahren und auf Päckchen warten
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.z = Z_IO;
+			next3D.IO = IO_GetBreak;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			next3D = HRL_Steuerung_GetNewJob_StopState();
-			next3D.carry = 1;
-			next3D.input = 1;
+			// 3 - Päckchen auf Arm fahren
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.carry = Carry_Get;
+			next3D.IO = IO_GetFree;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 4 - Arm einfahren
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.z = Z_Middle;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 5 - zu Einlagerungsstelle fahren (y-oben)
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.x = cmdData.bits.x;
+			next3D.y = cmdData.bits.y*2;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 6 - Arm ausfahren
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.z = Z_Inside;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 7 - in Box absenken (y-unten)
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.y = cmdData.bits.y*2+1;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 8 - Arm einfahren
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.z = Z_Middle;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);	
 			
-		}else{
-			//add remove
+		}else{//remove xy
+			// 1 - zu Einlagerungsstelle fahren (y-unten)
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.x = cmdData.bits.x;
+			next3D.y = cmdData.bits.y*2+1;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 2 - Arm ausfahren
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.z = Z_Inside;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 3 - in Box heben (y-oben)
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.y = cmdData.bits.y*2;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 4 - Arm einfahren
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.z = Z_Middle;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 5 - zum Auslader
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.x = PositionXOutput;
+			next3D.y = PositionYOutput;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 6 - Arm ausfahren und auf Päckchen warten
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.z = Z_IO;
+			next3D.IO = IO_GetFree;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 7 - Päckchen auf Arm fahren
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.carry = Carry_Give;
+			next3D.IO = IO_GetBreak;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			// 8 - Arm einfahren
+			next3D = HRL_Steuerung_GetNewJob_DontCareState();
+			next3D.z = Z_Middle;
+			HRL_Steuerung_GetNewJob_Qsend(next3D);
 		}
 	}		
 }
 
-NextMovement HRL_Steuerung_GetNewJob_StopState(){
+NextMovement HRL_Steuerung_GetNewJob_DontCareState(){
 	NextMovement returnValue; // 0=stop für den Motor; 0<sensorwert-1
-	returnValue.input=0;
-	returnValue.output=0;
-	returnValue.x=0;
-	returnValue.y=0;
-	returnValue.z=0;
+	returnValue.carry = DontCare;
+	returnValue.IO= DontCare;
+	returnValue.x=  DontCare;
+	returnValue.y=  DontCare;
+	returnValue.z=  DontCare;
 
 	return returnValue;
 }
