@@ -54,11 +54,6 @@ void Simulation_Sensorverwaltung(void)
 	{
 		// regelmaessige Abfrage + weitersetzen
 		semTake(semBinary_SteuerungToSimulation, WAIT_FOREVER); 
-			/*
-			 * TODO: Variable zwischenspeichern und nur kurzer Lock
-			 * oder ohne kopieren und mit langem Lock
-			 * sieht vielleicht besser aus ...?
-			 */
 		abusdata AktorBusData = SteuerungToSimulation;
 		semGive(semBinary_SteuerungToSimulation);
 		//x-Achse
@@ -196,14 +191,17 @@ bool triggersZ(int z)
 
 void Simulation_SensorCollector(void){
 	sbusdata sensorBusData;
+	int i;
+	MessageQSensorresult ValueToBus;
 	
 	printf("Start: Task - SensorCollector \n");
 	while(1)
 	{
-		MessageQSensorresult ValueToBus;
-		if (msgQNumMsgs(mesgQueueIdSensorCollector) > 0) //TODO: lieber mit WHILE - in einem Rutsch alle Verarbeiten?
+		i=0;
+		while ( (msgQNumMsgs(mesgQueueIdSensorCollector)>0) && i<26)
 		{
-			if(msgQReceive(mesgQueueIdSensorCollector, &ValueToBus.charvalue, 1, WAIT_FOREVER) == ERROR) // TODO: wird der Process austomatisch abgegeben beim wait?
+			i++;
+			if(msgQReceive(mesgQueueIdSensorCollector, &ValueToBus.charvalue, 1, WAIT_FOREVER) == ERROR)
 				printf("msgQReceive in SensorCollector failed\n");
 			else
 			{
@@ -215,12 +213,12 @@ void Simulation_SensorCollector(void){
 				else {
 					//printf("Sensor #%d ist 	-- passiv --\n",ValueToBus.result.id);
 					sensorBusData.l |= (1<<ValueToBus.result.id);
-				}
-				if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
-					printf("msgQSend in SensorCollector failed\n");			
+				}	
 			}
 		}
+		if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
+			printf("msgQSend in SensorCollector failed\n");		
 		
-	taskDelay(Delay_Time_Simulation_SensorCollector);
+		taskDelay(Delay_Time_Simulation_SensorCollector);
 	}
 }
