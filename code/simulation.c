@@ -16,32 +16,48 @@ bool triggersY(int y);
 bool triggersZ(int z);
 
 
-void Simulation_init(void){
+int Simulation_init(void){
 	printf("Start: Simulation \n");
-		
+	bool abort = false;
+	
 	/* create message queue */
-	if ((mesgQueueIdSensorCollector = msgQCreate(MSG_Q_MAX_Messages,1,MSG_Q_FIFO))	== NULL)
+	if ((mesgQueueIdSensorCollector = msgQCreate(MSG_Q_MAX_Messages,1,MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate in failed\n");
-	//printf("messageQ SensorCollector created\n");
-	
-	if ((mesgQueueIdSensorData = msgQCreate(MSG_Q_MAX_Messages,5,MSG_Q_FIFO))	== NULL)
-		printf("msgQCreate in SensorCollector failed\n");
-	//printf("messageQ-SensorData created\n");
-	
-	
-	/*create Binary Semaphore*/
-	semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO, SEM_FULL);
-	//printf("Semaphore für Simulation <-> Steuerung erstellt");
-	
-	taskSpawn("SensorVerwaltung", 120, 0x100, 2000, (FUNCPTR)Simulation_Sensorverwaltung, 0,0,0,0,0,0,0,0,0,0);
-	taskSpawn("SensorCollector", 120, 0x100, 2000, (FUNCPTR)Simulation_SensorCollector, 0,0,0,0,0,0,0,0,0,0);
-		
-	int i;
-	for (i=0; i < 26; i++)
-	{
-		taskSpawn("Sensor",120,0x100,2000,(FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
+		abort = true;
 	}
-	//printf("Sensor & Sensorcollector gespawnt \n");
+	else{
+		//printf("messageQ SensorCollector created\n");
+	}
+	
+	if ((mesgQueueIdSensorData = msgQCreate(MSG_Q_MAX_Messages,5,MSG_Q_FIFO))	== NULL){
+		printf("msgQCreate in SensorCollector failed\n");
+		abort = true;
+	}
+	else {
+		//printf("messageQ-SensorData created\n");	
+	}
+		
+	if (abort){
+		return (-1);
+	}
+	else {
+		/*create Binary Semaphore*/
+		semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO, SEM_FULL);
+		//printf("Semaphore für Simulation <-> Steuerung erstellt");
+		
+		taskSpawn("SensorVerwaltung", 120, 0x100, 2000, (FUNCPTR)Simulation_Sensorverwaltung, 0,0,0,0,0,0,0,0,0,0);
+		taskSpawn("SensorCollector", 120, 0x100, 2000, (FUNCPTR)Simulation_SensorCollector, 0,0,0,0,0,0,0,0,0,0);
+			
+		int i;
+		for (i=0; i < 26; i++)
+		{
+			taskSpawn("Sensor",120,0x100,2000,(FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
+		}
+		//printf("Sensor & Sensorcollector gespawnt \n");
+		
+		return 0;
+	}
+	
 	
 }
 

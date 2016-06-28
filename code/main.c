@@ -4,22 +4,20 @@
 #include "readcommand.h"
 
 
-void main_init_all();
 void main_user_input();
 
 main(void){
 	printf("Hallo Andreas \n");
-	
-	main_init_all();
+	if ( Simulation_init() == (-1) ){
+		printf("Simulation_init fehlgeschlagen");
+		return 0;
+	}
+	else if ( HRL_Steuerung_init() == (-1) ){
+		printf("HRL_Steuerung_init fehlgeschlagen");
+		return 0;
+	}
 	
 	main_user_input();
-	
-}
-
-void main_init_all(){
-	//Simulation_init();
-	HRL_Steuerung_init();
-	
 }
 
 void main_user_input(){

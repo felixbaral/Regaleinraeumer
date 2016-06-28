@@ -47,28 +47,41 @@ void HRL_Steuerung_GetNewJob();
 NextMovement HRL_Steuerung_GetNewJob_StopState();
 void HRL_Steuerung_GetNewJob_Qsend();
 
-void HRL_Steuerung_init(){
+int HRL_Steuerung_init(){
 	printf("Start: HRL-Steuerung \n");
-	//TODO: Abbruch bei Fehlern
+	bool abort = false;
+	//TODO: Abbruch bei Fehlern? Ja
 	
-	if ((mesgQueueIdNextMovement = msgQCreate(5,3,MSG_Q_FIFO))	== NULL)
+	if ((mesgQueueIdNextMovement = msgQCreate(5,3,MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate (NextMovement) in HRL_Steuerung_init failed\n");
+		abort = true;
+	}
 	
-	if ((mesgQueueIdCmd = msgQCreate(MSG_Q_CMD_MAX_Messages,1,MSG_Q_PRIORITY))	== NULL)
+	if ((mesgQueueIdCmd = msgQCreate(MSG_Q_CMD_MAX_Messages,1,MSG_Q_PRIORITY))	== NULL){
 		printf("msgQCreate (CMD) in HRL_Steuerung_init failed\n");
+		abort = true;
+	}
 	
 	// Aktor Data Push
-	if ((mesgQueueIdAktorDataPush = msgQCreate(2,1,MSG_Q_FIFO))	== NULL)
+	if ((mesgQueueIdAktorDataPush = msgQCreate(2,1,MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate (AktorDataPush) in HRL_Steuerung_init failed\n");
-	else
+		abort = true;
+	}
+	
+	if (abort){
+		return (-1);
+	}
+	else{
 		taskSpawn("HRL_Steuerung_AktorDataPush",120,0x100,2000,(FUNCPTR)HRL_Steuerung_AktorDataPush,0,0,0,0,0,0,0,0,0,0);
+		return 0;
+	}
+		
 	
 }
 
 void HRL_Steuerung_AktorDataPush(){
 	abusdata transmit;
-	while (!shutdown_HRL_Steuerung){
-		//TODO: Timeout nutzen für Systemshutdown
+	while (1){
 		if(msgQReceive(mesgQueueIdAktorDataPush, transmit.amsg, sizeof(transmit.amsg), WAIT_FOREVER) == ERROR) 
 			printf("msgQReceive in HRL_Steuerung_AktorDataPush failed\n");
 		else{
@@ -122,7 +135,7 @@ void HRL_Steuerung_GetNewJob()
 	}		
 }
 
-NextMovement HRL_Steuerung_GetNewJob_StopState(){ //TODO: müsste eigentlich nach Fall berechnet werden - besprechen
+NextMovement HRL_Steuerung_GetNewJob_StopState(){
 	NextMovement returnValue; // 0=stop für den Motor; 0<sensorwert-1
 	returnValue.input=0;
 	returnValue.output=0;

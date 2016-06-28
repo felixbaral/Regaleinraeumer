@@ -32,6 +32,6 @@ typedef union{
 
 //--------------------------------------
 
-void HRL_Steuerung_init();
+int HRL_Steuerung_init();
 
 #endif /*HRL_STEUERUNG*/

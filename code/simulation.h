@@ -48,6 +48,6 @@ typedef union {
 
 
 //------------------------------------------
-void Simulation_init(void);
+int Simulation_init(void);
 
 #endif /* DOUBLE_INCLUDE_CHECK_SIMULATION */
