@@ -21,6 +21,20 @@
 #define sensorDistanceX 10
 #define sensorDistanceY 5
 #define sensorDistanceZ 10
+
+
+// EA-Slots
+#define PositionXinput 0;
+#define PositionYinput 8;
+#define PositionXOutput 9;
+#define PositionYOutput 8;
+
+// Belegungsmatrix der Simulation
+// Wird noch nicht ausgefüllt
+bool belegungsMatrix[10][5];
+
+
+
 int towerPositionX;
 int towerPositionY;
 int towerPositionZ;

@@ -26,7 +26,7 @@ int Simulation_init(void){
 		abort = true;
 	}
 	else{
-		//printf("messageQ SensorCollector created\n");
+		printf("messageQ SensorCollector created\n");
 	}
 	
 	if ((mesgQueueIdSensorData = msgQCreate(MSG_Q_MAX_Messages,5,MSG_Q_FIFO))	== NULL){
@@ -34,7 +34,7 @@ int Simulation_init(void){
 		abort = true;
 	}
 	else {
-		//printf("messageQ-SensorData created\n");	
+		printf("messageQ-SensorData created\n");
 	}
 		
 	if (abort){
@@ -43,7 +43,7 @@ int Simulation_init(void){
 	else {
 		/*create Binary Semaphore*/
 		semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO, SEM_FULL);
-		//printf("Semaphore für Simulation <-> Steuerung erstellt");
+		printf("Semaphore fuer Simulation <-> Steuerung erstellt");
 		
 		taskSpawn("SensorVerwaltung", 120, 0x100, 2000, (FUNCPTR)Simulation_Sensorverwaltung, 0,0,0,0,0,0,0,0,0,0);
 		taskSpawn("SensorCollector", 120, 0x100, 2000, (FUNCPTR)Simulation_SensorCollector, 0,0,0,0,0,0,0,0,0,0);
@@ -53,7 +53,7 @@ int Simulation_init(void){
 		{
 			taskSpawn("Sensor",120,0x100,2000,(FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
 		}
-		//printf("Sensor & Sensorcollector gespawnt \n");
+		printf("Sensor & Sensorcollector gespawnt \n");
 		
 		return 0;
 	}
@@ -118,9 +118,17 @@ void Simulation_Sensorverwaltung(void)
 	}
 }
 
+
 void Simulation_Sensor(int id)
 {
-	MessageQSensorresult returnValue;
+    int previousX = 0;
+    int previousY = 0;
+    int previousZ = 0;
+    bool firstStepInputTaken = false;
+    bool firstStepOutputTaken = false;
+    bool boxOnLichttaster = false;
+    
+    MessageQSensorresult returnValue;
 	returnValue.result.id = id;
 	int triggerOffset;
 	printf("Start: Task - Sensor #%d\n", id);
@@ -162,7 +170,6 @@ void Simulation_Sensor(int id)
 	{
 		if(id < 10)// Y-Sensoren
 		{
-			//returnValue.result.value = triggersY(triggerOffset);
 			returnValue.result.value = false; //test
 		}
 		else if(id < 20)// X-Achse
@@ -176,15 +183,58 @@ void Simulation_Sensor(int id)
 		// Lichtkram
 		else
 		{
-			//TODO:bla
-			//returnValue.result.value = 
+            // Lichttaster   Tower
+            if(id == 25)
+            {
+                // Ausgabeschritte
+                if(boxOnLichttaster)
+                {
+                    // hier mŸssen ausgabeschritte betrachtet werden
+                    
+                    
+                    
+                    
+                }
+                // Eingabeschritte
+                else
+                {
+                    // second step (hochfahren) taken
+                    if(firstStepInputTaken &&
+                       previousX == towerPositionX &&
+                       towerPositionZ == 2 &&
+                       previousY-1 == towerPositionY)
+                    {
+                        returnValue.result.value = true;
+                        firstStepInputTaken = false;
+                        boxOnLichttaster = true;
+                    }
+                    // first step: von unten rangefahren?
+                    else if(towerPositionX == PositionXinput && towerPositionY == PositionYinput && towerPositionZ == 2)
+                    {
+                        firstStepInputTaken = true;
+                        returnValue.result.value = false;
+                    }
+                    else
+                    {
+                        firstStepInputTaken = false;
+                        // hier muss ich wissen ob ein paket auf dem Arm liegt
+                        returnValue.result.value = false;
+                        
+                        
+                    }
+                }
+            }
 		}
-
+        previousX = towerPositionX;
+        previousY = towerPositionY;
+        previousZ = towerPositionZ;
+        
 		if((msgQSend(mesgQueueIdSensorCollector,&returnValue.charvalue, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 			printf("msgQSend in Sensor #%d failed\n", id);			
 				
 		taskDelay(Delay_Time_Simulation_Sensor);
-	}	
+	}
+    
 }
 
 bool triggersX(int x)
