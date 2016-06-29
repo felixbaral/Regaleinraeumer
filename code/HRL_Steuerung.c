@@ -42,7 +42,8 @@ MSG_Q_ID mesgQueueIdAktorDataPush;
 
 void HRL_Steuerung_AktorDataPush();
 void HRL_Steuerung_Movement();
-sbusdata HRL_Steuerung_Movement_GetSensorBusData();
+void HRL_Steuerung_Movement_GetSensorBusData();
+void HRL_Steuerung_Movement_GetSensorBusData_ERROR(char* msg);
 void HRL_Steuerung_GetNewJob();
 NextMovement HRL_Steuerung_GetNewJob_DontCareState();
 void HRL_Steuerung_GetNewJob_Qsend();
@@ -73,6 +74,14 @@ int HRL_Steuerung_init(){
 	}
 	else{
 		taskSpawn("HRL_Steuerung_AktorDataPush",120,0x100,2000,(FUNCPTR)HRL_Steuerung_AktorDataPush,0,0,0,0,0,0,0,0,0,0);
+		
+		
+		//TODO: linke und rehte Box bestimmen
+	/*	if (PositionXinput < PositionXoutput){
+			//test
+		}*/
+		
+		
 		return 0;
 	}
 		
@@ -94,11 +103,17 @@ void HRL_Steuerung_AktorDataPush(){
 
 void HRL_Steuerung_Movement(){
 	while(1){
+		HRL_Steuerung_Movement_GetSensorBusData();
+		HRL_Steuerung_GetNewJob();
 		
+		NextMovementUNION nextmove;
+		if(msgQReceive(mesgQueueIdNextMovement, nextmove.charvalue, sizeof(nextmove.charvalue), WAIT_FOREVER) == ERROR)
+			printf("msgQReceive in HRL_Steuerung_Movement failed\n");	
 	}
+		
 }
 
-sbusdata HRL_Steuerung_Movement_GetSensorBusData(){
+void HRL_Steuerung_Movement_GetSensorBusData(){
 	sbusdata returnvalue;
 	int i, errorcount;
 	if(msgQReceive(mesgQueueIdSensorData, returnvalue.smsg, sizeof(returnvalue.smsg), WAIT_FOREVER) == ERROR){ 
@@ -106,27 +121,70 @@ sbusdata HRL_Steuerung_Movement_GetSensorBusData(){
 		returnvalue.l = 0;
 	}
 	else{
-		//prüfen ob möglich
-//		returnvalue.sbits.
 		
-		// x-Achse
+		// X-Achse
 		errorcount= (-1);
 		for (i = 0; i < 10; i++) {
-			if ( (returnvalue.sgroups.sX & (1<i) ) == 0)
+			if ( (returnvalue.l & (1<(i+10)) ) == 0)
 			{
 				lastSensorX = i;
 				errorcount++;
 			}
 		}
-		if (errorcount<1){
-			//alles ok
+		if (errorcount>0){
+			HRL_Steuerung_Movement_GetSensorBusData_ERROR("mehrere X-Sensoren ausgelöst");
 		}
 		
+		// Y-Achse
+		errorcount= (-1);
+		//unten
+		for (i = 0; i < 5; i++) {
+			if ( (returnvalue.l & (1<i) ) == 0)
+			{
+				lastSensorY = i*2+1;
+				errorcount++;
+			}
+		}
+		//oben
+		for (i = 0; i < 5; i++) {
+			if ( (returnvalue.l & (1<(i+5)) ) == 0)
+			{
+				lastSensorY = i*2;
+				errorcount++;
+			}
+		}
+		if (errorcount>0){
+			HRL_Steuerung_Movement_GetSensorBusData_ERROR("mehrere Y-Sensoren ausgelöst");
+		}
 		
+		// Z-Achse
+		errorcount= (-1);
+		for (i = 0; i < 3; i++) {
+			if ( (returnvalue.l & (1<(i+20)) ) == 0)
+			{
+				lastSensorZ = i;
+				errorcount++;
+			}
+		}
+		if (errorcount>0){
+			HRL_Steuerung_Movement_GetSensorBusData_ERROR("mehrere Z-Sensoren ausgelöst");
+		}
 		
+		//licht
+		if (!returnvalue.sbits.lT){
+			
+		}
 		
 	}
-	return returnvalue;
+	//return returnvalue;
+}
+
+void HRL_Steuerung_Movement_GetSensorBusData_ERROR(char* msg){
+	printf("Sensoric ERROR: %s \nSystem Stop\n", msg);
+	abusdata transmit;
+	transmit.i=0;
+	msgQReceive(mesgQueueIdAktorDataPush, transmit.amsg, sizeof(transmit.amsg), WAIT_FOREVER);
+	taskDelete(taskIdSelf());
 }
 
 void HRL_Steuerung_GetNewJob()
@@ -152,7 +210,7 @@ void HRL_Steuerung_GetNewJob()
 			// 1 - zum Einlader
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = PositionXinput;
-			next3D.y = PositionYinput;
+			next3D.y = PositionYinput+1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			// 2 - Arm ausfahren und auf Päckchen warten
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
@@ -163,6 +221,7 @@ void HRL_Steuerung_GetNewJob()
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.carry = Carry_Get;
 			next3D.IO = IO_GetFree;
+			next3D.y = PositionYinput-1; 
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			// 4 - Arm einfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
@@ -207,7 +266,7 @@ void HRL_Steuerung_GetNewJob()
 			// 5 - zum Auslader
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = PositionXOutput;
-			next3D.y = PositionYOutput;
+			next3D.y = PositionYOutput-1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			// 6 - Arm ausfahren und auf Päckchen warten
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
@@ -218,6 +277,7 @@ void HRL_Steuerung_GetNewJob()
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.carry = Carry_Give;
 			next3D.IO = IO_GetBreak;
+			next3D.y = PositionYOutput+1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			// 8 - Arm einfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
