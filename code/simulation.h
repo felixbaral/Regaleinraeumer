@@ -24,10 +24,10 @@
 
 
 // EA-Slots
-#define PositionXinput 0;
-#define PositionYinput 8;
-#define PositionXOutput 9;
-#define PositionYOutput 8;
+#define PositionXinput 0
+#define PositionYinput 8
+#define PositionXOutput 9
+#define PositionYOutput 8
 
 // Belegungsmatrix der Simulation
 // Wird noch nicht ausgefüllt
