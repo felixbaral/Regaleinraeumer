@@ -51,8 +51,7 @@ void HRL_Steuerung_GetNewJob_Qsend();
 int HRL_Steuerung_init(){
 	printf("Start: HRL-Steuerung \n");
 	bool abort = false;
-	//TODO: Abbruch bei Fehlern? Ja
-	
+	//TODO: sizeof() hinzufügen
 	if ((mesgQueueIdNextMovement = msgQCreate(5,3,MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate (NextMovement) in HRL_Steuerung_init failed\n");
 		abort = true;
@@ -75,13 +74,6 @@ int HRL_Steuerung_init(){
 	else{
 		taskSpawn("HRL_Steuerung_AktorDataPush",120,0x100,2000,(FUNCPTR)HRL_Steuerung_AktorDataPush,0,0,0,0,0,0,0,0,0,0);
 		
-		
-		//TODO: linke und rehte Box bestimmen
-	/*	if (PositionXinput < PositionXoutput){
-			//test
-		}*/
-		
-		
 		return 0;
 	}
 		
@@ -102,16 +94,117 @@ void HRL_Steuerung_AktorDataPush(){
 }
 
 void HRL_Steuerung_Movement(){
+	
+	//TODO: aktorik msgQ darf trotz pause nicht voll laufen
+	
+	NextMovementUNION nextmove;
+	bool waitForSensor;
+	abusdata aktorData;
+	sbusdata sensorData;
 	while(1){
-		HRL_Steuerung_Movement_GetSensorBusData();
-		HRL_Steuerung_GetNewJob();
+		HRL_Steuerung_GetNewJob(); //auto pause
 		
-		NextMovementUNION nextmove;
-		if(msgQReceive(mesgQueueIdNextMovement, nextmove.charvalue, sizeof(nextmove.charvalue), WAIT_FOREVER) == ERROR)
-			printf("msgQReceive in HRL_Steuerung_Movement failed\n");	
-	}
-		
+		while(msgQNumMsgs(mesgQueueIdNextMovement) > 0){
+			if(msgQReceive(mesgQueueIdNextMovement, nextmove.charvalue, sizeof(nextmove.charvalue), WAIT_FOREVER) == ERROR)
+				printf("msgQ (NextMove) Receive in HRL_Steuerung_Movement failed\n");	
+			
+			waitForSensor = true;
+			while (waitForSensor){
+				HRL_Steuerung_Movement_GetSensorBusData(); //auto pause
+				waitForSensor = false;
+				
+				//  X
+				if ( (lastSensorX != nextmove.move.x) && (nextmove.move.x != DontCare) ){
+					waitForSensor = true;
+					//TODO: speed nutzen
+					if (lastSensorX < nextmove.move.x) //TODO: vereinfachen?
+						aktorData.abits.axr = 1;
+					else 
+						aktorData.abits.axr = 0;
+					
+					if (lastSensorX > nextmove.move.x)
+						aktorData.abits.axl = 1;
+					else 
+						aktorData.abits.axl = 0;					
+				}
+				
+				//  Y
+				if ( (lastSensorY != nextmove.move.y) && (nextmove.move.y != DontCare) ){
+					waitForSensor = true;
+					if (lastSensorY < nextmove.move.y)
+						aktorData.abits.ayu = 1;
+					else 
+						aktorData.abits.ayu = 0;
+					
+					if (lastSensorY > nextmove.move.y)
+						aktorData.abits.ayo = 1;
+					else 
+						aktorData.abits.ayo = 0;					
+				}
+				else 
+					nextmove.move.y = DontCare;
+				
+				//  Z
+				if ( (lastSensorZ != nextmove.move.z) && (nextmove.move.z != DontCare) ){
+					waitForSensor = true;
+					if (lastSensorZ < nextmove.move.z)
+						aktorData.abits.azv = 1;
+					else 
+						aktorData.abits.azv = 0;
+					
+					if (lastSensorY > nextmove.move.y)
+						aktorData.abits.azh = 1;
+					else 
+						aktorData.abits.azh = 0;					
+				}
+				
+				//  Licht
+				// Licht-Taster
+				if ( (lastCarryState != nextmove.move.carry) && (nextmove.move.carry != DontCare) ){
+					if ( (nextmove.move.carry == Carry_Get) && (!waitForSensor) ) {
+						aktorData.abits.ayu = 0;
+						aktorData.abits.ayo = 1;
+					}
+					if ( (nextmove.move.carry == Carry_Give) && (!waitForSensor) ) {
+						aktorData.abits.ayu = 1;
+						aktorData.abits.ayo = 0;
+					}
+					waitForSensor = true;
+				}
+				
+				// Lichtschranke
+				if (nextmove.move.IO != DontCare){
+					waitForSensor = true;
+					if ( (lastSensorX == PositionXinput) && (lastSensorY == PositionYinput) ){ //wir sind beim Input
+						if (nextmove.move.IO == IO_GetBreak){
+							aktorData.abits.aealre=1;
+							aktorData.abits.aealra=0;
+						}
+						else{ //GetFree
+							aktorData.abits.ayu = 0;
+							aktorData.abits.ayo = 1;
+						}
+					}
+					else if ( (lastSensorX == PositionXOutput) && (lastSensorY == PositionYOutput) ){ //wir sind beim Output
+						if (nextmove.move.IO == IO_GetFree){
+							aktorData.abits.aearra=1;
+							aktorData.abits.aearre=0;
+						}
+						else{ //GetBreak
+							aktorData.abits.ayo = 0;
+							aktorData.abits.ayu = 1;
+						}
+					}
+				}//end Lichtschranke
+			}//end waitForSensor
+		}//MovementQ
+	}//while(1)	
 }
+
+void HRL_Steuerung_Movement_clearAktor(){
+	//abusdata
+}
+
 
 void HRL_Steuerung_Movement_GetSensorBusData(){
 	sbusdata returnvalue;
@@ -171,8 +264,14 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 		}
 		
 		//licht
+		if (!returnvalue.sbits.lL){
+			lastInputState = 1;
+		}
+		if (!returnvalue.sbits.lR){
+			lastOutputState = 1;
+		}
 		if (!returnvalue.sbits.lT){
-			
+			lastCarryState = 1;
 		}
 		
 	}
@@ -192,18 +291,23 @@ void HRL_Steuerung_GetNewJob()
 	//obere Prio zuerst //danach normal
 	NextMovement next3D;
 	cmdQdata cmdData;
+
+	static int pause;
+	int timeout[2] = {WAIT_FOREVER, 350};
 	
-	if(msgQReceive(mesgQueueIdCmd, cmdData.charvalue, 1, 350) == ERROR) {//etwa 5 Sekunden Timeout
+	if(msgQReceive(mesgQueueIdCmd, cmdData.charvalue, sizeof(cmdData.charvalue), timeout[pause]) == ERROR) {//etwa 5 Sekunden Timeout
 		if( msgQNumMsgs(mesgQueueIdCmd) == 0){
-			// Pause-Modus einleiten - Timeout 
+			pause = 0;
+			// Pause-Modus einleiten - Timeout
+			pause = true;
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = PositionXinput;
 			next3D.y = PositionYinput;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-	
+			HRL_Steuerung_GetNewJob_Qsend(next3D);		
 		}
 	}
 	else{
+		pause = 1;
 		if (cmdData.bits.highprio){
 			belegungsMatrix[cmdData.bits.x][cmdData.bits.y] = cmdData.bits.cmd;
 		}else if (cmdData.bits.cmd){//insert xy
@@ -268,12 +372,12 @@ void HRL_Steuerung_GetNewJob()
 			next3D.x = PositionXOutput;
 			next3D.y = PositionYOutput-1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			// 6 - Arm ausfahren und auf Päckchen warten
+			// 6 - Arm ausfahren und auf freien Slot warten
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_IO;
 			next3D.IO = IO_GetFree;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			// 7 - Päckchen auf Arm fahren
+			// 7 - Päckchen von Arm fahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.carry = Carry_Give;
 			next3D.IO = IO_GetBreak;

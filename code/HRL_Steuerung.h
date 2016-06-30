@@ -11,11 +11,6 @@
  *      Author: Zauberer
  */
 
-//TODO:delete
-#define PositionXinput 1;
-#define PositionYinput 1; 
-#define PositionXOutput 8;
-#define PositionYOutput 1; 
 
 // Msg-Queue
 MSG_Q_ID mesgQueueIdCmd;
