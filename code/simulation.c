@@ -199,17 +199,14 @@ void Simulation_Sensor(int id)
                 else
                 {
                     // second step (hochfahren) taken
-                    if(firstStepInputTaken &&
-                       previousX == towerPositionX &&
-                       towerPositionZ == 2 &&
-                       previousY-1 == towerPositionY)
+                /*    if( (firstStepInputTaken) && (previousX == towerPositionX) && (towerPositionZ == 2) && ((previousY-1) == towerPositionY) )
                     {
                         returnValue.result.value = true;
                         firstStepInputTaken = false;
                         boxOnLichttaster = true;
                     }
                     // first step: von unten rangefahren?
-                    else if(towerPositionX == PositionXinput && towerPositionY == PositionYinput && towerPositionZ == 2)
+                    else if( (towerPositionX == PositionXinput) && (towerPositionY == PositionYinput) && (towerPositionZ == 2) )
                     {
                         firstStepInputTaken = true;
                         returnValue.result.value = false;
@@ -221,7 +218,7 @@ void Simulation_Sensor(int id)
                         returnValue.result.value = false;
                         
                         
-                    }
+                    }*/
                 }
             }
 		}

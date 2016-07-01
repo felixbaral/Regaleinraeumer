@@ -23,7 +23,7 @@
 #define sensorDistanceZ 10
 
 
-// EA-Slots
+// EA-Slots (Eingabe links)
 #define PositionXinput 0
 #define PositionYinput 8
 #define PositionXOutput 9
