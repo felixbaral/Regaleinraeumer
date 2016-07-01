@@ -1,6 +1,7 @@
 #ifndef DOUBLE_INCLUDE_CHECK_READCOMMAND
 #define DOUBLE_INCLUDE_CHECK_READCOMMAND
 
+#include "msgQLib.h"
 /*
  * readcommand.h
  *
@@ -10,8 +11,8 @@
 
 
 //MessageQueue
-#define MEG_Q_Job_MAX_Messages 200
-MSG_Q_ID mesgQueueIdJob;
+//#define MEG_Q_Job_MAX_Messages 200
+//MSG_Q_ID mesgQueueIdJob;
 
 typedef enum {false, true} bool;
 typedef struct {

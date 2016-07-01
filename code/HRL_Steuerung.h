@@ -11,6 +11,9 @@
  *      Author: Zauberer
  */
 
+#define towerHeight 5
+#define towerWidth 10
+#define towerDepth 3
 
 // Msg-Queue
 MSG_Q_ID mesgQueueIdCmd;

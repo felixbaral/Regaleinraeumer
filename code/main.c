@@ -2,12 +2,19 @@
 #include "HRL_Steuerung.h"
 #include "simulation.h"
 #include "readcommand.h"
+#include "visualisierung.h"
 
 
 void main_user_input();
 
 main(void){
 	printf("Hallo Andreas \n");
+	
+	//TODO: visu test
+	//visualisiere(belegung, xpos, ypos, zpos, eingang, ausgang);
+	
+	
+	
 	if ( Simulation_init() == (-1) ){
 		printf("Simulation_init fehlgeschlagen");
 		return 0;
