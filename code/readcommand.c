@@ -1,3 +1,5 @@
+#include "readcommand.h"
+
 /*
  * readcommand.c
  *
@@ -5,9 +7,6 @@
  *      Author: Oliver Jack
  */
 
-#include <stdio.h>
-#include "readcommand.h"
-#include <string.h>
 
 command readcommand() {
 	int x, y;

@@ -9,8 +9,6 @@
  */
 
 #define UINT unsigned int
-#define MAX_MESSAGES 3
-#define MAX_MESSAGE_LENGTH 5
 
 typedef struct { // Sensoren
 	UINT sYu :5;
@@ -91,8 +89,5 @@ typedef union {
 	Aktorbits abits;
 	Aktorgroups agroups;
 } abusdata;
-
-void sdata_init(sbusdata *data);
-void adata_init(abusdata *data);
 
 #endif /* BUSDATA_H_ */

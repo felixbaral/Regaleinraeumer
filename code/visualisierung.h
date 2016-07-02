@@ -1,8 +1,7 @@
 #ifndef DOUBLE_INCLUDE_CHECK_VISUALISIERUNG
 #define DOUBLE_INCLUDE_CHECK_VISUALISIERUNG
 
-#include "Busdata.h"
-#include "readcommand.h"
+#include "bool_types.h"
 #include <stdio.h>
 #include "HRL_Steuerung.h"
 #include "msgQLib.h"
@@ -23,4 +22,4 @@ typedef union{
 
 void visualisiere(MSG_Q_ID msgQid);
 
-#endif
+#endif /*VISUALISIERUNG */
