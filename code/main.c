@@ -1,13 +1,22 @@
-#include <stdio.h>
+#include <stdio.h> //printf
 #include "HRL_Steuerung.h"
 #include "simulation.h"
 #include "readcommand.h"
+
+//TODO: delete
+#include "visualisierung.h"
 
 
 void main_user_input();
 
 main(void){
 	printf("Hallo Andreas \n");
+	
+	//TODO: visu test
+	//visualisiere(belegung, xpos, ypos, zpos, eingang, ausgang);
+	
+	
+	
 	if ( Simulation_init() == (-1) ){
 		printf("Simulation_init fehlgeschlagen");
 		return 0;
@@ -37,18 +46,18 @@ void main_user_input(){
 				cmdQ.bits.cmd=1;	
 				//printf("Nach nächstem Job: + Belegung + (%d - %d) \n", cmd.par1, cmd.par2);
 			}
-			else if (strcmp(cmd, "clearspace") == 0){
+			else if (strcmp(cmd.cmd, "clearspace") == 0){
 				cmdQ.bits.highprio=1;
 				cmdQ.bits.cmd=0;
 				//printf("Nach nächstem Job: - Belegung - (%d - %d) \n", cmd.par1, cmd.par2);
 							
 			}
-			else if (strcmp(cmd, "insert") == 0){
+			else if (strcmp(cmd.cmd, "insert") == 0){
 				cmdQ.bits.highprio=0;
 				cmdQ.bits.cmd=1;
 				//printf("In Queue aufgenommen: + Einlagerung + (%d - %d) \n", cmd.par1, cmd.par2);
 			}
-			else if (strcmp(cmd, "remove") == 0){
+			else if (strcmp(cmd.cmd, "remove") == 0){
 				cmdQ.bits.highprio=0;
 				cmdQ.bits.cmd=0;
 				//printf("In Queue aufgenommen: - Auslagerung - (%d - %d) \n", cmd.par1, cmd.par2);

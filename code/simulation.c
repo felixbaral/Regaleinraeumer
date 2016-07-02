@@ -8,6 +8,30 @@
  * 4: Lichttaster
  */
 
+int towerPositionX;
+int towerPositionY;
+int towerPositionZ;
+
+// Belegungsmatrix der Simulation
+bool belegungsMatrix[10][5];// Wird noch nicht ausgefuellt
+
+// MessageQueue
+#define MSG_Q_MAX_Messages 200 //TODO: kleiner machen
+MSG_Q_ID mesgQueueIdSensorCollector;
+
+// Struct for Bus-Communication
+typedef struct {
+	UINT id :7;
+	bool value : 1;
+} Sensorresult;
+
+typedef union {
+	char charvalue; // Für MessageQueue
+	Sensorresult result;
+} MessageQSensorresult;
+
+//----------------------------------------------------------
+
 void Simulation_Sensorverwaltung(void);
 void Simulation_Sensor(int id);
 void Simulation_SensorCollector(void);
@@ -45,13 +69,13 @@ int Simulation_init(void){
 		semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO, SEM_FULL);
 		printf("Semaphore fuer Simulation <-> Steuerung erstellt");
 		
-		taskSpawn("SensorVerwaltung", 120, 0x100, 2000, (FUNCPTR)Simulation_Sensorverwaltung, 0,0,0,0,0,0,0,0,0,0);
-		taskSpawn("SensorCollector", 120, 0x100, 2000, (FUNCPTR)Simulation_SensorCollector, 0,0,0,0,0,0,0,0,0,0);
+		taskSpawn("SensorVerwaltung", Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Sensorverwaltung, 0,0,0,0,0,0,0,0,0,0);
+		taskSpawn("SensorCollector", Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_SensorCollector, 0,0,0,0,0,0,0,0,0,0);
 			
 		int i;
 		for (i=0; i < 26; i++)
 		{
-			taskSpawn("Sensor",120,0x100,2000,(FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
+			taskSpawn("Sensor",Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
 		}
 		printf("Sensor & Sensorcollector gespawnt \n");
 		
@@ -114,7 +138,7 @@ void Simulation_Sensorverwaltung(void)
 		//TODO: Slave3
 		
 		
-		taskDelay(Delay_Time_Simulation_SensorVerwaltung);
+		taskDelay(Delay_Time_Simulation);
 	}
 }
 
@@ -199,17 +223,14 @@ void Simulation_Sensor(int id)
                 else
                 {
                     // second step (hochfahren) taken
-                    if(firstStepInputTaken &&
-                       previousX == towerPositionX &&
-                       towerPositionZ == 2 &&
-                       previousY-1 == towerPositionY)
+                /*    if( (firstStepInputTaken) && (previousX == towerPositionX) && (towerPositionZ == 2) && ((previousY-1) == towerPositionY) )
                     {
                         returnValue.result.value = true;
                         firstStepInputTaken = false;
                         boxOnLichttaster = true;
                     }
                     // first step: von unten rangefahren?
-                    else if(towerPositionX == PositionXinput && towerPositionY == PositionYinput && towerPositionZ == 2)
+                    else if( (towerPositionX == PositionXinput) && (towerPositionY == PositionYinput) && (towerPositionZ == 2) )
                     {
                         firstStepInputTaken = true;
                         returnValue.result.value = false;
@@ -221,7 +242,7 @@ void Simulation_Sensor(int id)
                         returnValue.result.value = false;
                         
                         
-                    }
+                    }*/
                 }
             }
 		}
@@ -232,7 +253,7 @@ void Simulation_Sensor(int id)
 		if((msgQSend(mesgQueueIdSensorCollector,&returnValue.charvalue, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 			printf("msgQSend in Sensor #%d failed\n", id);			
 				
-		taskDelay(Delay_Time_Simulation_Sensor);
+		taskDelay(Delay_Time_Simulation);
 	}
     
 }
@@ -285,6 +306,6 @@ void Simulation_SensorCollector(void){
 		if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 			printf("msgQSend in SensorCollector failed\n");		
 		
-		taskDelay(Delay_Time_Simulation_SensorCollector);
+		taskDelay(Delay_Time_Simulation);
 	}
 }

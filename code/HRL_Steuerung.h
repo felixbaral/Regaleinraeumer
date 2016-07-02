@@ -3,6 +3,8 @@
 
 #include "simulation.h"
 #include "Busdata.h"
+#include "config.h"
+#include "bool_types.h"
 
 /*
  * HRL_Steuerung.h
@@ -11,18 +13,17 @@
  *      Author: Zauberer
  */
 
-
-// Msg-Queue
+// Msg-Queue Eingabe->GetNewJob
 MSG_Q_ID mesgQueueIdCmd;
-#define MSG_Q_CMD_MAX_Messages 200
+
 typedef struct {
 	UINT highprio 	: 1; 
-	UINT cmd 		: 1; //shutdown?
+	UINT cmd 		: 1; //TODO:shutdown?
 	UINT x			: 4; //1-10 (16)
 	UINT y			: 3; //1-5  (8)
 } commandbits;
 typedef union{
-	char charvalue[2];
+	char charvalue[sizeof(commandbits)];
 	commandbits bits;
 } cmdQdata;
 

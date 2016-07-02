@@ -8,12 +8,10 @@
  *      Author: Oliver Jack
  */
 
+#include <string.h> //compare
+#include <stdio.h>
+#include "bool_types.h"
 
-//MessageQueue
-#define MEG_Q_Job_MAX_Messages 200
-MSG_Q_ID mesgQueueIdJob;
-
-typedef enum {false, true} bool;
 typedef struct {
 	bool parse_ok;
 	char cmd[20];

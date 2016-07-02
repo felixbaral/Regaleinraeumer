@@ -6,6 +6,7 @@
  *  Created on: 27.06.2016
  *      Author: Zauberer
  */
+
 #define DontCare (-1)
 #define Z_IO 2
 #define Z_Middle 1
@@ -15,7 +16,6 @@
 #define IO_GetBreak 1
 #define IO_GetFree 0
 
-bool shutdown_HRL_Steuerung;
 bool belegungsMatrix[10][5];
 int lastSensorX;
 int lastSensorY;
