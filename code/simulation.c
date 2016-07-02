@@ -8,9 +8,11 @@
  * 4: Lichttaster
  */
 
-int towerPositionX = 0;
-int towerPositionY = 0;
-int towerPositionZ = sensorDistanceZ;
+int towerPositionX = StartPositionX * sensorDistanceX;
+int towerPositionY = StartPositionY * sensorDistanceY;
+int towerPositionZ = StartPositionZ * sensorDistanceZ;
+int TickCountInput = Delay_Time_IO_Slots;
+int TickCountOutput = Delay_Time_IO_Slots;
 
 // Belegungsmatrix der Simulation
 bool belegungsMatrix[10][5];// Wird noch nicht ausgefuellt
@@ -90,7 +92,7 @@ void Simulation_Sensorverwaltung(void)
 	printf("Start: Task - Sensorverwaltung \n");
 	abusdata AktorBusData;
 	AktorBusData.i=0;
-	int direction;
+	int direction, inputticks, outputticks;
 	while(true)
 	{
 		//printf("Will bewegen!\n");
@@ -148,8 +150,12 @@ void Simulation_Sensorverwaltung(void)
 			towerPositionZ = 2*sensorDistanceZ;
 		
 		// Ein- & Ausgabe-Slot
-		//TODO: Slave3
-		
+		if ( (AktorBusData.abits.aealre) && (!AktorBusData.abits.aealra) ){
+			TickCountInput--;
+		}
+		if ( (AktorBusData.abits.aearra) && (!AktorBusData.abits.aearre) ){
+			TickCountOutput--;
+		}
 		
 		taskDelay(Delay_Time_Simulation);
 	}
@@ -217,7 +223,7 @@ void Simulation_Sensor(int id)
 		{	//Z=0: Arm im Regal drinne
 			returnValue.result.value = triggersZ(triggerOffset);
 		}
-		// Lichtkram
+		// Lichtkram //TODO: Felix
 		else
 		{
             // Lichttaster   Tower
@@ -232,7 +238,7 @@ void Simulation_Sensor(int id)
                 else
                 {
                     // second step (hochfahren) taken
-                /*    if( (firstStepInputTaken) && (previousX == towerPositionX) && (towerPositionZ == 2) && ((previousY-1) == towerPositionY) )
+                    if( (firstStepInputTaken) && (previousX == towerPositionX) && (towerPositionZ == 2) && ((previousY-1) == towerPositionY) )
                     {
                         returnValue.result.value = true;
                         firstStepInputTaken = false;
@@ -251,7 +257,7 @@ void Simulation_Sensor(int id)
                         returnValue.result.value = false;
                         
                         
-                    }*/
+                    }
                 }
             }
 		}
@@ -312,11 +318,7 @@ void Simulation_SensorCollector(void){
 				}	
 			}
 		}
-		/*for (i = 0; i < 10; i++) {
-			unsigned int k;
-			k = sensorBusData.l & (1<<(i+10));
-			printf("x:%d = %d\n",i,k);
-		}*/
+		
 		if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, sizeof(sensorBusData.smsg), WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 			printf("msgQSend in SensorCollector failed\n");		
 		

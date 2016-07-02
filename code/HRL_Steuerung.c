@@ -51,7 +51,7 @@ void HRL_Steuerung_GetNewJob_Qsend();
 int HRL_Steuerung_init(){
 	printf("Start: HRL-Steuerung \n");
 	bool abort = false;
-	//TODO: sizeof() hinzufügen
+	
 	if ((mesgQueueIdNextMovement = msgQCreate(10,sizeof(NextMovement),MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate (NextMovement) in HRL_Steuerung_init failed\n");
 		abort = true;
@@ -119,39 +119,36 @@ void HRL_Steuerung_Movement(){
 				if ( (lastSensorX != nextmove.move.x) && (nextmove.move.x != DontCare) ){
 					waitForSensor = true;
 					//TODO: speed nutzen
-					if (lastSensorX < nextmove.move.x) //TODO: vereinfachen?
-						aktorData.abits.axr = 1;
-					else 
-						aktorData.abits.axr = 0;
 					
-					if (lastSensorX > nextmove.move.x)
+					if ( ((lastSensorX-nextmove.move.x)*(lastSensorX-nextmove.move.x)) >= 4)
+						aktorData.abits.axs = 1;
+					else
+						aktorData.abits.axs = 0;
+					
+					if (lastSensorX < nextmove.move.x){
+						aktorData.abits.axr = 1;
+						aktorData.abits.axl = 0;
+					}
+					else{ 
+						aktorData.abits.axr = 0;
 						aktorData.abits.axl = 1;
-					else 
-						aktorData.abits.axl = 0;					
+					}
+											
 				}
-				else {
-					aktorData.abits.axr = 0;
-					aktorData.abits.axl = 0;
-				}
+				
 				//  Y
 				if ( (lastSensorY != nextmove.move.y) && (nextmove.move.y != DontCare) ){
 					waitForSensor = true;
-					if (lastSensorY < nextmove.move.y)
+					if (lastSensorY < nextmove.move.y){
 						aktorData.abits.ayu = 1;
-					else 
+						aktorData.abits.ayo = 0;
+					}
+					else{
 						aktorData.abits.ayu = 0;
-					
-					if (lastSensorY > nextmove.move.y)
-						aktorData.abits.ayo = 1;
-					else 
-						aktorData.abits.ayo = 0;					
+						aktorData.abits.ayo = 1;						
+					}						
 				}
-				else {
-					nextmove.move.y = DontCare;
-					aktorData.abits.ayo=0;
-					aktorData.abits.ayu=0;
-				}
-				//aktorData.abits.ayu = 1;
+				
 				
 				//  Z
 				if ( (lastSensorZ != nextmove.move.z) && (nextmove.move.z != DontCare) ){
@@ -300,32 +297,17 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 		
 		
 		// Daten an Visualisierung senden
-		
-
 		visu.data.towerX=lastSensorX;
 		visu.data.towerY=lastSensorY;
 		visu.data.towerZ=lastSensorZ;
-		
-		if (lastCarryState == 1)
-			visu.data.carry=true;
-		else 
-			visu.data.carry=false;	
-		
-		if (lastInputState == 1)
-			visu.data.input=true;
-		else 
-			visu.data.input=false;
-		
-		if (lastOutputState == 1)
-			visu.data.output=true;
-		else 
-			visu.data.output=false;
-		
-		if (oldData <> visu.data){
-			oldData = visu.data;
-			if((msgQSend(msgQvisualisierung, visu.charvalue, sizeof(visu.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
-				printf("msgQSend Visualisierung übertragen: übersprungen\n");		
-		}
+		visu.data.carry = lastCarryState;
+		visu.data.input = lastInputState;
+		visu.data.output = lastOutputState;
+			
+		//oldData = visu.data; //Flimmer Reduzierung
+		if((msgQSend(msgQvisualisierung, visu.charvalue, sizeof(visu.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
+			printf("msgQSend Visualisierung übertragen: übersprungen\n");		
+	
 	}
 }
 
