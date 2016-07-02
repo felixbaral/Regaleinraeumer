@@ -15,7 +15,7 @@ main(void){
 	//TODO: visu test
 	//visualisiere(belegung, xpos, ypos, zpos, eingang, ausgang);
 	
-	
+	visualisierung_init();
 	
 	if ( Simulation_init() == (-1) ){
 		printf("Simulation_init fehlgeschlagen");
@@ -33,7 +33,7 @@ void main_user_input(){
 	command cmd;
 	cmdQdata cmdQ;
 	
-	taskPrioritySet(taskIdSelf(), 150 ); //eigene Prio runter 
+	taskPrioritySet(taskIdSelf(), Priority_Main ); //eigene Prio runter 
 	
 	while(1){
 		cmd = readcommand();
@@ -63,7 +63,7 @@ void main_user_input(){
 				//printf("In Queue aufgenommen: - Auslagerung - (%d - %d) \n", cmd.par1, cmd.par2);
 			}
 			
-			if((msgQSend(mesgQueueIdCmd, cmdQ.charvalue, 2, WAIT_FOREVER, cmdQ.bits.highprio)) == ERROR)
+			if((msgQSend(mesgQueueIdCmd, cmdQ.charvalue, sizeof(cmdQ.charvalue), WAIT_FOREVER, cmdQ.bits.highprio)) == ERROR)
 				printf("msgQSend in User-Input failed\n");			
 		}
 		taskDelay(1);

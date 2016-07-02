@@ -34,7 +34,7 @@ typedef struct {
 
 typedef union{
 	NextMovement move;
-	char charvalue[sizeof(NextMovement)+1];
+	char charvalue[sizeof(NextMovement)];
 }NextMovementUNION;
 
 MSG_Q_ID mesgQueueIdNextMovement;
@@ -52,18 +52,18 @@ int HRL_Steuerung_init(){
 	printf("Start: HRL-Steuerung \n");
 	bool abort = false;
 	//TODO: sizeof() hinzufügen
-	if ((mesgQueueIdNextMovement = msgQCreate(5,3,MSG_Q_FIFO))	== NULL){
+	if ((mesgQueueIdNextMovement = msgQCreate(10,sizeof(NextMovement),MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate (NextMovement) in HRL_Steuerung_init failed\n");
 		abort = true;
 	}
 	
-	if ((mesgQueueIdCmd = msgQCreate(MSG_Q_CMD_MAX_Messages,1,MSG_Q_PRIORITY))	== NULL){
+	if ((mesgQueueIdCmd = msgQCreate(MSG_Q_CMD_MAX_Messages,sizeof(commandbits),MSG_Q_PRIORITY))	== NULL){
 		printf("msgQCreate (CMD) in HRL_Steuerung_init failed\n");
 		abort = true;
 	}
 	
 	// Aktor Data Push
-	if ((mesgQueueIdAktorDataPush = msgQCreate(2,1,MSG_Q_FIFO))	== NULL){
+	if ( (mesgQueueIdAktorDataPush = msgQCreate(2, sizeof(Aktorbits), MSG_Q_FIFO)) == NULL){
 		printf("msgQCreate (AktorDataPush) in HRL_Steuerung_init failed\n");
 		abort = true;
 	}
@@ -72,8 +72,9 @@ int HRL_Steuerung_init(){
 		return (-1);
 	}
 	else{
-		taskSpawn("HRL_Steuerung_AktorDataPush",120,0x100,2000,(FUNCPTR)HRL_Steuerung_AktorDataPush,0,0,0,0,0,0,0,0,0,0);
-		
+		taskSpawn("HRL_Steuerung_AktorDataPush",Priority_HRL_Steuerung,0x100,2000,(FUNCPTR)HRL_Steuerung_AktorDataPush,0,0,0,0,0,0,0,0,0,0);
+		taskSpawn("HRL_Steuerung_HRL_Sterung_Movement",Priority_HRL_Steuerung,0x100,2000,(FUNCPTR)HRL_Steuerung_Movement,0,0,0,0,0,0,0,0,0,0);
+				
 		return 0;
 	}
 		
@@ -105,12 +106,13 @@ void HRL_Steuerung_Movement(){
 		HRL_Steuerung_GetNewJob(); //auto pause
 		
 		while(msgQNumMsgs(mesgQueueIdNextMovement) > 0){
+			printf("i got %d job(s) to move my ass\n", msgQNumMsgs(mesgQueueIdNextMovement));
 			if(msgQReceive(mesgQueueIdNextMovement, nextmove.charvalue, sizeof(nextmove.charvalue), WAIT_FOREVER) == ERROR)
 				printf("msgQ (NextMove) Receive in HRL_Steuerung_Movement failed\n");	
-			
 			waitForSensor = true;
 			while (waitForSensor){
 				HRL_Steuerung_Movement_GetSensorBusData(); //auto pause
+				aktorData.i=0;			
 				waitForSensor = false;
 				
 				//  X
@@ -127,7 +129,10 @@ void HRL_Steuerung_Movement(){
 					else 
 						aktorData.abits.axl = 0;					
 				}
-				
+				else {
+					aktorData.abits.axr = 0;
+					aktorData.abits.axl = 0;
+				}
 				//  Y
 				if ( (lastSensorY != nextmove.move.y) && (nextmove.move.y != DontCare) ){
 					waitForSensor = true;
@@ -141,21 +146,24 @@ void HRL_Steuerung_Movement(){
 					else 
 						aktorData.abits.ayo = 0;					
 				}
-				else 
+				else {
 					nextmove.move.y = DontCare;
+					aktorData.abits.ayo=0;
+					aktorData.abits.ayu=0;
+				}
+				//aktorData.abits.ayu = 1;
 				
 				//  Z
 				if ( (lastSensorZ != nextmove.move.z) && (nextmove.move.z != DontCare) ){
 					waitForSensor = true;
-					if (lastSensorZ < nextmove.move.z)
+					if (lastSensorZ < nextmove.move.z){
 						aktorData.abits.azv = 1;
-					else 
+						aktorData.abits.azh = 0;
+					}
+					else{
 						aktorData.abits.azv = 0;
-					
-					if (lastSensorY > nextmove.move.y)
-						aktorData.abits.azh = 1;
-					else 
-						aktorData.abits.azh = 0;					
+						aktorData.abits.azh = 1;			
+					}
 				}
 				
 				//  Licht
@@ -196,32 +204,39 @@ void HRL_Steuerung_Movement(){
 						}
 					}
 				}//end Lichtschranke
+				
+				//sende noch Daten
+				if((msgQSend(mesgQueueIdAktorDataPush, aktorData.amsg, sizeof(aktorData.amsg), WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
+					printf("msgQSend to AktorDataPush failed\n");			
 			}//end waitForSensor
 		}//MovementQ
 	}//while(1)	
 }
 
-void HRL_Steuerung_Movement_clearAktor(){
-	//abusdata
-}
-
 
 void HRL_Steuerung_Movement_GetSensorBusData(){
 	sbusdata returnvalue;
+	UIdataUnion visu;
+	static UIdata oldData;
 	int i, errorcount;
 	if(msgQReceive(mesgQueueIdSensorData, returnvalue.smsg, sizeof(returnvalue.smsg), WAIT_FOREVER) == ERROR){ 
 		printf("msgQReceive in HRL_Steuerung_Movement_GetSensorBusData failed\n");
 		returnvalue.l = 0;
 	}
 	else{
-		
+		/*for (i = 0; i < 10; i++) {
+			unsigned int k;
+			k = returnvalue.l & (1<(i));
+			printf("y:%d = %d\n",i,k);
+		}*/
 		// X-Achse
 		errorcount= (-1);
 		for (i = 0; i < 10; i++) {
-			if ( (returnvalue.l & (1<(i+10)) ) == 0)
+			if ( (returnvalue.l & (1<<(i+10)) ) == 0)
 			{
 				lastSensorX = i;
 				errorcount++;
+				//printf("X sensor ausgelöst: %d %d\n", i,errorcount);
 			}
 		}
 		if (errorcount>0){
@@ -232,7 +247,7 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 		errorcount= (-1);
 		//unten
 		for (i = 0; i < 5; i++) {
-			if ( (returnvalue.l & (1<i) ) == 0)
+			if ( (returnvalue.l & (1<<i) ) == 0)
 			{
 				lastSensorY = i*2+1;
 				errorcount++;
@@ -240,7 +255,7 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 		}
 		//oben
 		for (i = 0; i < 5; i++) {
-			if ( (returnvalue.l & (1<(i+5)) ) == 0)
+			if ( (returnvalue.l & (1<<(i+5)) ) == 0)
 			{
 				lastSensorY = i*2;
 				errorcount++;
@@ -253,7 +268,7 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 		// Z-Achse
 		errorcount= (-1);
 		for (i = 0; i < 3; i++) {
-			if ( (returnvalue.l & (1<(i+20)) ) == 0)
+			if ( (returnvalue.l & (1<<(i+20)) ) == 0)
 			{
 				lastSensorZ = i;
 				errorcount++;
@@ -267,15 +282,51 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 		if (!returnvalue.sbits.lL){
 			lastInputState = 1;
 		}
+		else 
+			lastInputState = 0;
+		
 		if (!returnvalue.sbits.lR){
 			lastOutputState = 1;
 		}
+		else 
+			lastOutputState = 0;
+				
 		if (!returnvalue.sbits.lT){
 			lastCarryState = 1;
 		}
+		else 
+			lastCarryState = 0;
+				
 		
+		
+		// Daten an Visualisierung senden
+		
+
+		visu.data.towerX=lastSensorX;
+		visu.data.towerY=lastSensorY;
+		visu.data.towerZ=lastSensorZ;
+		
+		if (lastCarryState == 1)
+			visu.data.carry=true;
+		else 
+			visu.data.carry=false;	
+		
+		if (lastInputState == 1)
+			visu.data.input=true;
+		else 
+			visu.data.input=false;
+		
+		if (lastOutputState == 1)
+			visu.data.output=true;
+		else 
+			visu.data.output=false;
+		
+		if (oldData <> visu.data){
+			oldData = visu.data;
+			if((msgQSend(msgQvisualisierung, visu.charvalue, sizeof(visu.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
+				printf("msgQSend Visualisierung übertragen: übersprungen\n");		
+		}
 	}
-	//return returnvalue;
 }
 
 void HRL_Steuerung_Movement_GetSensorBusData_ERROR(char* msg){
@@ -293,11 +344,12 @@ void HRL_Steuerung_GetNewJob()
 	cmdQdata cmdData;
 
 	static int pause;
-	int timeout[2] = {WAIT_FOREVER, 350};
-	
+	int timeout[2] = {350, WAIT_FOREVER};
+	printf("Go and get a new Job, Bitch!\n");
 	if(msgQReceive(mesgQueueIdCmd, cmdData.charvalue, sizeof(cmdData.charvalue), timeout[pause]) == ERROR) {//etwa 5 Sekunden Timeout
 		if( msgQNumMsgs(mesgQueueIdCmd) == 0){
-			pause = 0;
+			printf("Pause Job!\n");
+			pause = 1;
 			// Pause-Modus einleiten - Timeout
 			pause = true;
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
@@ -307,10 +359,12 @@ void HRL_Steuerung_GetNewJob()
 		}
 	}
 	else{
-		pause = 1;
+		printf("normal Job!\n");
+		pause = 0;
 		if (cmdData.bits.highprio){
 			belegungsMatrix[cmdData.bits.x][cmdData.bits.y] = cmdData.bits.cmd;
 		}else if (cmdData.bits.cmd){//insert xy
+			printf("insert Job erkannt");
 			// 1 - zum Einlader
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = PositionXinput;
@@ -350,39 +404,47 @@ void HRL_Steuerung_GetNewJob()
 			HRL_Steuerung_GetNewJob_Qsend(next3D);	
 			
 		}else{//remove xy
+			printf("remove Job erkannt");
 			// 1 - zu Einlagerungsstelle fahren (y-unten)
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = cmdData.bits.x;
 			next3D.y = cmdData.bits.y*2+1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 2 - Arm ausfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_Inside;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 3 - in Box heben (y-oben)
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.y = cmdData.bits.y*2;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 4 - Arm einfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_Middle;
+			next3D.z = Z_IO;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 5 - zum Auslader
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = PositionXOutput;
 			next3D.y = PositionYOutput-1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 6 - Arm ausfahren und auf freien Slot warten
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_IO;
 			next3D.IO = IO_GetFree;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 7 - Päckchen von Arm fahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.carry = Carry_Give;
 			next3D.IO = IO_GetBreak;
 			next3D.y = PositionYOutput+1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 8 - Arm einfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_Middle;
@@ -405,6 +467,7 @@ NextMovement HRL_Steuerung_GetNewJob_DontCareState(){
 void HRL_Steuerung_GetNewJob_Qsend(NextMovement move){
 	NextMovementUNION transmit;
 	transmit.move = move;
+	//printf
 	if((msgQSend(mesgQueueIdNextMovement, transmit.charvalue, sizeof(transmit.charvalue), WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 		printf("msgQSend in HRL_Steuerung_GetNewJob failed\n");		
 }

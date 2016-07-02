@@ -3,8 +3,12 @@
 
 #include "bool_types.h"
 #include <stdio.h>
-#include "HRL_Steuerung.h"
 #include "msgQLib.h"
+#include "config.h"
+
+
+// Msg-Queue Steuerung->Visualisierung
+MSG_Q_ID msgQvisualisierung;
 
 typedef struct{
 	int towerX;
@@ -17,9 +21,10 @@ typedef struct{
 } UIdata;
 typedef union{
 	UIdata data;
-	char charvalue[sizeof(UIdata)+1];
+	char charvalue[sizeof(UIdata)];
+	long double l; 
 }UIdataUnion;
 
-void visualisiere(MSG_Q_ID msgQid);
+void visualisierung();
 
 #endif /*VISUALISIERUNG */

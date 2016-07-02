@@ -52,7 +52,7 @@ typedef struct {
 
 typedef union {
 	unsigned long l; // Test und Initialisierung
-	char smsg[sizeof(Sensorbits) + 1]; // Für MessageQueue
+	char smsg[sizeof(Sensorbits)]; // Für MessageQueue
 	Sensorbits sbits;
 	Sensorgroups sgroups;
 	//UINT index : 26;
@@ -85,7 +85,7 @@ typedef struct { // Aktoren
 
 typedef union {
 	unsigned int i; // Test und Initialisierung
-	char amsg[sizeof(Aktorbits) + 1]; // Für MessageQueue
+	char amsg[sizeof(Aktorbits)]; // Für MessageQueue
 	Aktorbits abits;
 	Aktorgroups agroups;
 } abusdata;
