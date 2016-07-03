@@ -7,6 +7,7 @@
 #include "config.h"
 
 
+
 // Msg-Queue Steuerung->Visualisierung
 MSG_Q_ID msgQvisualisierung;
 

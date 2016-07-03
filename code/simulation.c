@@ -45,6 +45,7 @@ bool triggersZ(int z);
 int Simulation_init(void){
 	printf("Start: Simulation \n");
 	bool abort = false;
+	sbusdata temp;
 	
 	/* create message queue */
 	if ((mesgQueueIdSensorCollector = msgQCreate(MSG_Q_MAX_Messages,1,MSG_Q_FIFO))	== NULL){
@@ -55,7 +56,7 @@ int Simulation_init(void){
 		printf("messageQ SensorCollector created\n");
 	}
 	
-	if ((mesgQueueIdSensorData = msgQCreate(MSG_Q_MAX_Messages,5,MSG_Q_FIFO))	== NULL){
+	if ((mesgQueueIdSensorData = msgQCreate(3,sizeof(temp.smsg),MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate in SensorCollector failed\n");
 		abort = true;
 	}
@@ -150,11 +151,12 @@ void Simulation_Sensorverwaltung(void)
 			towerPositionZ = 2*sensorDistanceZ;
 		
 		// Ein- & Ausgabe-Slot
-		if ( (AktorBusData.abits.aealre) && (!AktorBusData.abits.aealra) ){
+		if ( (AktorBusData.abits.aealre == 1) && (AktorBusData.abits.aealra == 0) ){
 			TickCountInput--;
 		}
-		if ( (AktorBusData.abits.aearra) && (!AktorBusData.abits.aearre) ){
+		if ( (AktorBusData.abits.aearra == 1) && (AktorBusData.abits.aearre == 0) ){
 			TickCountOutput--;
+			printf("TickCountOutput: %d\n", TickCountOutput);
 		}
 		
 		taskDelay(Delay_Time_Simulation);
@@ -260,6 +262,19 @@ void Simulation_Sensor(int id)
                     }
                 }
             }
+            //TODO: TickCount(er) müssen noch zurückgesetzt werden
+            else if (id == 23){ //Eingabe (links)
+            	if (TickCountInput <= 0)
+            		returnValue.result.value = true;
+            	else 
+            		returnValue.result.value = false;
+            }
+            else if (id == 24){ //Ausgabe (rechts)
+				if (TickCountOutput > 0)
+					returnValue.result.value = true;
+				else 
+					returnValue.result.value = false;
+			}
 		}
         previousX = towerPositionX;
         previousY = towerPositionY;
@@ -319,7 +334,7 @@ void Simulation_SensorCollector(void){
 			}
 		}
 		
-		if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, sizeof(sensorBusData.smsg), WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
+		if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, sizeof(sensorBusData.smsg), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
 			printf("msgQSend in SensorCollector failed\n");		
 		
 		taskDelay(Delay_Time_Simulation);

@@ -95,9 +95,6 @@ void HRL_Steuerung_AktorDataPush(){
 }
 
 void HRL_Steuerung_Movement(){
-	
-	//TODO: aktorik msgQ darf trotz pause nicht voll laufen
-	
 	NextMovementUNION nextmove;
 	bool waitForSensor;
 	abusdata aktorData;
@@ -118,7 +115,6 @@ void HRL_Steuerung_Movement(){
 				//  X
 				if ( (lastSensorX != nextmove.move.x) && (nextmove.move.x != DontCare) ){
 					waitForSensor = true;
-					//TODO: speed nutzen
 					
 					if ( ((lastSensorX-nextmove.move.x)*(lastSensorX-nextmove.move.x)) >= 4)
 						aktorData.abits.axs = 1;
@@ -180,25 +176,32 @@ void HRL_Steuerung_Movement(){
 				// Lichtschranke
 				if (nextmove.move.IO != DontCare){
 					waitForSensor = true;
-					if ( (lastSensorX == PositionXinput) && (lastSensorY == PositionYinput) ){ //wir sind beim Input
-						if (nextmove.move.IO == IO_GetBreak){
+					if ( (lastSensorX == PositionXinput) ){ //wir sind beim Input
+						if( (nextmove.move.IO == IO_GetBreak)  && (nextmove.move.IO =! lastInputState) ){
 							aktorData.abits.aealre=1;
 							aktorData.abits.aealra=0;
 						}
-						else{ //GetFree
+						else if ( (nextmove.move.IO == IO_GetFree) && (nextmove.move.IO =! lastInputState) )//GetFree
+						{	
 							aktorData.abits.ayu = 0;
 							aktorData.abits.ayo = 1;
 						}
+						else 
+							waitForSensor = false;
 					}
-					else if ( (lastSensorX == PositionXOutput) && (lastSensorY == PositionYOutput) ){ //wir sind beim Output
-						if (nextmove.move.IO == IO_GetFree){
+					else if ( (lastSensorX == PositionXoutput) ){ //wir sind beim Output
+						if( (nextmove.move.IO == IO_GetFree) && (nextmove.move.IO =! lastInputState) ) {
 							aktorData.abits.aearra=1;
 							aktorData.abits.aearre=0;
+							printf("lets move out with this shit \n");
 						}
-						else{ //GetBreak
+						else if ( (nextmove.move.IO == IO_GetBreak)  && (nextmove.move.IO =! lastInputState) )
+						{ //GetBreak
 							aktorData.abits.ayo = 0;
 							aktorData.abits.ayu = 1;
 						}
+						else 
+							waitForSensor = false;
 					}
 				}//end Lichtschranke
 				
@@ -214,7 +217,7 @@ void HRL_Steuerung_Movement(){
 void HRL_Steuerung_Movement_GetSensorBusData(){
 	sbusdata returnvalue;
 	UIdataUnion visu;
-	static UIdata oldData;
+	static unsigned long int oldData;
 	int i, errorcount;
 	if(msgQReceive(mesgQueueIdSensorData, returnvalue.smsg, sizeof(returnvalue.smsg), WAIT_FOREVER) == ERROR){ 
 		printf("msgQReceive in HRL_Steuerung_Movement_GetSensorBusData failed\n");
@@ -295,19 +298,20 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 			lastCarryState = 0;
 				
 		
+		if (returnvalue.l != oldData ){ //Flimmer Reduzierung
+			oldData = returnvalue.l;
 		
-		// Daten an Visualisierung senden
-		visu.data.towerX=lastSensorX;
-		visu.data.towerY=lastSensorY;
-		visu.data.towerZ=lastSensorZ;
-		visu.data.carry = lastCarryState;
-		visu.data.input = lastInputState;
-		visu.data.output = lastOutputState;
-			
-		//oldData = visu.data; //Flimmer Reduzierung
-		if((msgQSend(msgQvisualisierung, visu.charvalue, sizeof(visu.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
-			printf("msgQSend Visualisierung übertragen: übersprungen\n");		
-	
+			// Daten an Visualisierung senden
+			visu.data.towerX=lastSensorX;
+			visu.data.towerY=lastSensorY;
+			visu.data.towerZ=lastSensorZ;
+			visu.data.carry = lastCarryState;
+			visu.data.input = lastInputState;
+			visu.data.output = lastOutputState;
+				
+			if((msgQSend(msgQvisualisierung, visu.charvalue, sizeof(visu.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
+				printf("msgQSend Visualisierung übertragen: übersprungen\n");			
+		}
 	}
 }
 
@@ -405,13 +409,13 @@ void HRL_Steuerung_GetNewJob()
 			
 			// 4 - Arm einfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_IO;
+			next3D.z = Z_Middle;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			
 			// 5 - zum Auslader
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.x = PositionXOutput;
-			next3D.y = PositionYOutput-1;
+			next3D.x = PositionXoutput;
+			next3D.y = PositionYoutput-1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			
 			// 6 - Arm ausfahren und auf freien Slot warten
@@ -424,7 +428,7 @@ void HRL_Steuerung_GetNewJob()
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.carry = Carry_Give;
 			next3D.IO = IO_GetBreak;
-			next3D.y = PositionYOutput+1;
+			next3D.y = PositionYoutput+1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			
 			// 8 - Arm einfahren

@@ -30,8 +30,8 @@
 // EA-Slots (Eingabe links)
 #define PositionXinput 5
 #define PositionYinput 5
-#define PositionXOutput 9
-#define PositionYOutput 8
+#define PositionXoutput 9
+#define PositionYoutput 8
 
 
 // 3D- Tower Navi
@@ -40,14 +40,6 @@
 #define sensorDistanceZ 10
 #define Delay_Time_IO_Slots 5
 
-
-
-
-
-
-
-
-
-#define sensorDistanceX (SensorDistanceX + (SensorDistanceX %2))
+//------------------------------------------------
 
 #endif /* Config */

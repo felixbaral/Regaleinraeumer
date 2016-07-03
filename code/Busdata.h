@@ -45,9 +45,9 @@ typedef struct {
 	UINT zM :1;
 	UINT zEA :1;
 	// Lichtsensoren
-	UINT lL :1;
-	UINT lR :1;
-	UINT lT :1;
+	UINT lL :1; //id 23
+	UINT lR :1;	//id 24
+	UINT lT :1; //id 25
 } Sensorbits;
 
 typedef union {

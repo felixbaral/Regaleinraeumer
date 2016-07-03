@@ -6,8 +6,11 @@
 #include "msgQLib.h"
 #include "busdata.h"
 #include "bool_types.h"
-
 #include "config.h"
+
+
+#define sensorDistanceX (SensorDistanceX + (1 - (SensorDistanceX %2) ) )
+
 
 //Aktordaten - Steuerung zu Simulation (global)
 SEM_ID semBinary_SteuerungToSimulation;
