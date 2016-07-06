@@ -173,6 +173,7 @@ void Simulation_Sensor(int id)
     bool firstStepOutputTaken = false;
     bool boxOnLichttaster = false;
     
+    
     MessageQSensorresult returnValue;
 	returnValue.result.id = id;
 	int triggerOffset;
@@ -232,22 +233,23 @@ void Simulation_Sensor(int id)
             if(id == 25)
             {
                 // Ausgabeschritte
-                if(boxOnLichttaster)
+                if(boxOnLichttaster || true)
                 {
                     // hier mŸssen ausgabeschritte betrachtet werden
+                	returnValue.result.value = false;
                 }
                 // Eingabeschritte
                 else
                 {
                     // second step (hochfahren) taken
-                    if( (firstStepInputTaken) && (previousX == towerPositionX) && (towerPositionZ == 2) && ((previousY-1) == towerPositionY) )
+                    if( firstStepInputTaken && previousX == towerPositionX && towerPositionZ == 2 && (previousY-1) == towerPositionY )
                     {
                         returnValue.result.value = true;
                         firstStepInputTaken = false;
                         boxOnLichttaster = true;
                     }
                     // first step: von unten rangefahren?
-                    else if( (towerPositionX == PositionXinput) && (towerPositionY == PositionYinput) && (towerPositionZ == 2) )
+                    else if( towerPositionX == PositionXinput && towerPositionY == PositionYinput && towerPositionZ == 2 )
                     {
                         firstStepInputTaken = true;
                         returnValue.result.value = false;
@@ -335,7 +337,8 @@ void Simulation_SensorCollector(void){
 		}
 		
 		if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, sizeof(sensorBusData.smsg), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
-			printf("msgQSend in SensorCollector failed\n");		
+			if(!(msgQNumMsgs(mesgQueueIdSensorData) > 2)) 
+				printf("msgQSend in SensorCollector failed\n");		
 		
 		taskDelay(Delay_Time_Simulation);
 	}

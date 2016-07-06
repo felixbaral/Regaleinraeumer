@@ -16,7 +16,6 @@
 #define IO_GetBreak 1
 #define IO_GetFree 0
 
-bool belegungsMatrix[10][5];
 int lastSensorX;
 int lastSensorY;
 int lastSensorZ;
@@ -30,6 +29,7 @@ typedef struct {
 	int z;
 	int IO;
 	int carry;
+	int allocation;
 } NextMovement;
 
 typedef union{
@@ -51,6 +51,8 @@ void HRL_Steuerung_GetNewJob_Qsend();
 int HRL_Steuerung_init(){
 	printf("Start: HRL-Steuerung \n");
 	bool abort = false;
+	
+	belegungsMatrix[2][3]=true;
 	
 	if ((mesgQueueIdNextMovement = msgQCreate(10,sizeof(NextMovement),MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate (NextMovement) in HRL_Steuerung_init failed\n");
@@ -112,6 +114,10 @@ void HRL_Steuerung_Movement(){
 				aktorData.i=0;			
 				waitForSensor = false;
 				
+				if (nextmove.move.allocation != DontCare){
+					belegungsMatrix[lastSensorX][lastSensorY/2]=nextmove.move.allocation; 
+					nextmove.move.allocation = DontCare;
+				}
 				//  X
 				if ( (lastSensorX != nextmove.move.x) && (nextmove.move.x != DontCare) ){
 					waitForSensor = true;
@@ -161,6 +167,13 @@ void HRL_Steuerung_Movement(){
 				
 				//  Licht
 				// Licht-Taster
+				if (lastCarryState != DontCare)
+				{
+					printf("Lichttaster_State: %d \n", lastCarryState);
+					printf("nextmove carry: %d \n", nextmove.move.carry);
+					
+				}
+				
 				if ( (lastCarryState != nextmove.move.carry) && (nextmove.move.carry != DontCare) ){
 					if ( (nextmove.move.carry == Carry_Get) && (!waitForSensor) ) {
 						aktorData.abits.ayu = 0;
@@ -204,7 +217,8 @@ void HRL_Steuerung_Movement(){
 							waitForSensor = false;
 					}
 				}//end Lichtschranke
-				
+				if(waitForSensor) printf("Waiting for Sensor!\n");
+				else printf("I hate that sensor!\n");
 				//sende noch Daten
 				if((msgQSend(mesgQueueIdAktorDataPush, aktorData.amsg, sizeof(aktorData.amsg), WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 					printf("msgQSend to AktorDataPush failed\n");			
@@ -308,7 +322,8 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 			visu.data.carry = lastCarryState;
 			visu.data.input = lastInputState;
 			visu.data.output = lastOutputState;
-				
+			memcpy(visu.data.matrix, belegungsMatrix, sizeof(belegungsMatrix));
+			
 			if((msgQSend(msgQvisualisierung, visu.charvalue, sizeof(visu.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
 				printf("msgQSend Visualisierung übertragen: übersprungen\n");			
 		}
@@ -356,37 +371,45 @@ void HRL_Steuerung_GetNewJob()
 			next3D.x = PositionXinput;
 			next3D.y = PositionYinput+1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 2 - Arm ausfahren und auf Päckchen warten
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_IO;
 			next3D.IO = IO_GetBreak;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 3 - Päckchen auf Arm fahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.carry = Carry_Get;
 			next3D.IO = IO_GetFree;
 			next3D.y = PositionYinput-1; 
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 4 - Arm einfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_Middle;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 5 - zu Einlagerungsstelle fahren (y-oben)
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = cmdData.bits.x;
 			next3D.y = cmdData.bits.y*2;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 6 - Arm ausfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_Inside;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 7 - in Box absenken (y-unten)
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.y = cmdData.bits.y*2+1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			
 			// 8 - Arm einfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_Middle;
+			next3D.allocation = 1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);	
 			
 		}else{//remove xy
@@ -410,6 +433,7 @@ void HRL_Steuerung_GetNewJob()
 			// 4 - Arm einfahren
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.z = Z_Middle;
+			next3D.allocation = 0;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);
 			
 			// 5 - zum Auslader
@@ -446,6 +470,7 @@ NextMovement HRL_Steuerung_GetNewJob_DontCareState(){
 	returnValue.x=  DontCare;
 	returnValue.y=  DontCare;
 	returnValue.z=  DontCare;
+	returnValue.allocation = DontCare;
 
 	return returnValue;
 }
