@@ -22,4 +22,7 @@ MSG_Q_ID mesgQueueIdSensorData;
 //------------------------------------------
 int Simulation_init(void);
 
+bool belegungsMatrix[10][5];
+
+
 #endif /* DOUBLE_INCLUDE_CHECK_SIMULATION */

@@ -50,7 +50,7 @@ void visualisierung(){
 				}
 				else{				//Füllzeilen (in den Belegung angezeigt wird)
 					for (x = 0; x < towerWidth; x++) {
-						if(output.data.matrix[y/2][x] == true){
+						if(output.data.matrix[x][y/2] == true){
 							belegt = '#';
 						}
 						else belegt = ' ';

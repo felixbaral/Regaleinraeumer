@@ -18,7 +18,7 @@ typedef struct{
 	bool input;
 	bool output;
 	bool carry;
-	bool matrix[5][10]; //  [y][x]
+	bool matrix[10][5]; //  [x][y]
 } UIdata;
 typedef union{
 	UIdata data;
