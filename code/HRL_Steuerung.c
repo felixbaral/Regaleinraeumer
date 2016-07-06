@@ -111,7 +111,8 @@ void HRL_Steuerung_Movement(){
 			waitForSensor = true;
 			while (waitForSensor){
 				HRL_Steuerung_Movement_GetSensorBusData(); //auto pause
-				aktorData.i=0;			
+				aktorData.i=0; //alle Motoren aus	
+				
 				waitForSensor = false;
 				
 				if (nextmove.move.allocation != DontCare){
@@ -166,14 +167,39 @@ void HRL_Steuerung_Movement(){
 				}
 				
 				//  Licht
-				// Licht-Taster
-				if (lastCarryState != DontCare)
-				{
-					printf("Lichttaster_State: %d \n", lastCarryState);
-					printf("nextmove carry: %d \n", nextmove.move.carry);
-					
-				}
+				// Lichtschranke
+				if (nextmove.move.IO != DontCare){
+					if ( (lastSensorX == PositionXinput) ){ //wir sind beim Input
+						if( (nextmove.move.IO == IO_GetBreak)  && (nextmove.move.IO =! lastInputState) ){
+							aktorData.abits.aealre=1;
+							aktorData.abits.aealra=0;
+							waitForSensor = true;
+						}
+						else if ( (nextmove.move.IO == IO_GetFree) && (nextmove.move.IO =! lastInputState) )//GetFree
+						{	
+							aktorData.abits.ayu = 0;
+							aktorData.abits.ayo = 1;
+							waitForSensor = true;
+						}
+					}
+					else if ( (lastSensorX == PositionXoutput) ){ //wir sind beim Output
+						if( (nextmove.move.IO == IO_GetFree) && (nextmove.move.IO =! lastInputState) ) {
+							aktorData.abits.aearra=1;
+							aktorData.abits.aearre=0;
+							printf("lets move out with this shit \n");
+							waitForSensor = true;
+						}
+						else if ( (nextmove.move.IO == IO_GetBreak)  && (nextmove.move.IO =! lastInputState) )
+						{ //GetBreak
+							aktorData.abits.ayo = 0;
+							aktorData.abits.ayu = 1;
+							waitForSensor = true;
+						}
+					}
+				}//end Lichtschranke
 				
+				
+				// Licht-Taster
 				if ( (lastCarryState != nextmove.move.carry) && (nextmove.move.carry != DontCare) ){
 					if ( (nextmove.move.carry == Carry_Get) && (!waitForSensor) ) {
 						aktorData.abits.ayu = 0;
@@ -186,40 +212,8 @@ void HRL_Steuerung_Movement(){
 					waitForSensor = true;
 				}
 				
-				// Lichtschranke
-				if (nextmove.move.IO != DontCare){
-					waitForSensor = true;
-					if ( (lastSensorX == PositionXinput) ){ //wir sind beim Input
-						if( (nextmove.move.IO == IO_GetBreak)  && (nextmove.move.IO =! lastInputState) ){
-							aktorData.abits.aealre=1;
-							aktorData.abits.aealra=0;
-						}
-						else if ( (nextmove.move.IO == IO_GetFree) && (nextmove.move.IO =! lastInputState) )//GetFree
-						{	
-							aktorData.abits.ayu = 0;
-							aktorData.abits.ayo = 1;
-						}
-						else 
-							waitForSensor = false;
-					}
-					else if ( (lastSensorX == PositionXoutput) ){ //wir sind beim Output
-						if( (nextmove.move.IO == IO_GetFree) && (nextmove.move.IO =! lastInputState) ) {
-							aktorData.abits.aearra=1;
-							aktorData.abits.aearre=0;
-							printf("lets move out with this shit \n");
-						}
-						else if ( (nextmove.move.IO == IO_GetBreak)  && (nextmove.move.IO =! lastInputState) )
-						{ //GetBreak
-							aktorData.abits.ayo = 0;
-							aktorData.abits.ayu = 1;
-						}
-						else 
-							waitForSensor = false;
-					}
-				}//end Lichtschranke
-				if(waitForSensor) printf("Waiting for Sensor!\n");
-				else printf("I hate that sensor!\n");
-				//sende noch Daten
+				
+								//sende noch Daten
 				if((msgQSend(mesgQueueIdAktorDataPush, aktorData.amsg, sizeof(aktorData.amsg), WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 					printf("msgQSend to AktorDataPush failed\n");			
 			}//end waitForSensor

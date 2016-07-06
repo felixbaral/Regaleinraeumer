@@ -169,7 +169,7 @@ void Simulation_Sensor(int id)
     int previousX = 0;
     int previousY = 0;
     int previousZ = 0;
-    bool firstStepInputTaken = false;
+    bool firstStepTaken = false;
     bool firstStepOutputTaken = false;
     bool boxOnLichttaster = false;
     
@@ -226,42 +226,84 @@ void Simulation_Sensor(int id)
 		{	//Z=0: Arm im Regal drinne
 			returnValue.result.value = triggersZ(triggerOffset);
 		}
-		// Lichtkram //TODO: Felix
+
 		else
 		{
             // Lichttaster   Tower
             if(id == 25)
             {
-                // Ausgabeschritte
-                if(boxOnLichttaster || true)
+            	// hat sich zum vorigen step nicht bewegt auf x und z achse
+            	if(firstStepTaken && (previousX == towerPositionX) && (towerPositionZ == towerPositionZ))
+            	{
+            		returnValue.result.value = boxOnLichttaster;
+            		// Ausgabe
+					if(boxOnLichttaster)
+					{
+						
+						// nach unten gefahren ... ablegen?
+						if(previousY < towerPositionY)
+						{
+							// außen -> Ein ausgabe slots
+							if(towerPositionZ == 2*sensorDistanceZ)
+							{
+								returnValue.result.value = false;  
+								firstStepTaken = false;	
+								TickCountOutput = Delay_Time_IO_Slots;
+							}
+							// innen -> im Regal
+							else if(towerPositionZ == 0)
+							{
+								// da ist kein päckchen im regal an dieser stelle
+								if(!belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/sensorDistanceY])
+								{
+									returnValue.result.value = false;
+									firstStepTaken = false;
+								}
+							}
+						}
+					}
+					// Aufnahme
+					else
+					{
+						// nach oben gefahren ... aufnahme?
+						if(previousY > towerPositionY)
+						{
+							// außen -> Ein ausgabe slots
+							if(towerPositionZ == 2*sensorDistanceZ)
+							{
+								// da ist ein päckchen auf dem eingaslot
+								if(TickCountInput <= 0)
+								{
+									returnValue.result.value = true; 
+									firstStepTaken = false;
+									TickCountInput = Delay_Time_IO_Slots;
+									boxOnLichttaster = true;
+								}
+							}
+							// innen -> im Regal
+							else
+							{
+								// da ist ein päckchen im regal an dieser stelle
+								if(belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/sensorDistanceY])
+								{
+									returnValue.result.value = true;
+									firstStepTaken = false;
+									boxOnLichttaster = true;
+								}
+							}
+						}
+					}
+            	}
+				// first step: von unten rangefahren?
+                else if((towerPositionZ == 2*sensorDistanceZ || towerPositionZ == 0) && (towerPositionX != previousX || towerPositionY != previousY || towerPositionZ != previousZ))
+				{
+					firstStepTaken = true;
+					returnValue.result.value = boxOnLichttaster;
+				}
+                else 
                 {
-                    // hier mŸssen ausgabeschritte betrachtet werden
-                	returnValue.result.value = false;
-                }
-                // Eingabeschritte
-                else
-                {
-                    // second step (hochfahren) taken
-                    if( firstStepInputTaken && previousX == towerPositionX && towerPositionZ == 2 && (previousY-1) == towerPositionY )
-                    {
-                        returnValue.result.value = true;
-                        firstStepInputTaken = false;
-                        boxOnLichttaster = true;
-                    }
-                    // first step: von unten rangefahren?
-                    else if( towerPositionX == PositionXinput && towerPositionY == PositionYinput && towerPositionZ == 2 )
-                    {
-                        firstStepInputTaken = true;
-                        returnValue.result.value = false;
-                    }
-                    else
-                    {
-                        firstStepInputTaken = false;
-                        // hier muss ich wissen ob ein paket auf dem Arm liegt
-                        returnValue.result.value = false;
-                        
-                        
-                    }
+					returnValue.result.value = boxOnLichttaster;
+                	firstStepTaken = false;
                 }
             }
             //TODO: TickCount(er) müssen noch zurückgesetzt werden
