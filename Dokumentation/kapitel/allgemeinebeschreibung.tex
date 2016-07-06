@@ -1,0 +1,26 @@
+\section{Allgemeine Beschreibung}
+\subsection{Aufgabenstellung und Umsetzungsansatz}
+Die Aufgabestellung des Semesterprojektes ist es eine Hochregallagersimulation unter zuhilfenahme eines Echtzeitbetriebssystems zu erstellen. Diese soll das gesamte System mit einer statisch gewählten Regaldimension sowohl steuern als auch simulieren.
+Das Simulationmodell umfasst ein Regallagersystem mit $5*10$ Regalfächern, ein Ein- und ein Ausgabeslot und einen Turm zum be- und entladen. Dieser Turm ist auf einer Achse montiert auf welcher er sich in X-Richtung bewegen kann, desweiteren kann der Ausleger am Turm in Y-Richtung herauf und herab und in Z-Richtung rein und raus gefahren werden. Diese Bewegungen und die daraus resultierende Position des Turms werden von Tastern auf der Schiene ermittelt.\\
+Auf der X-Achse und auf der Y-Achse sind jeweils 10 Taster und auf der Z-Achse 3.
+
+Dem Anwender steht als Eingabe- und Ausgabemedium die Konsole zur Verfügung.
+\newline\newline
+Ihm stehen folgende Befehle zur Verfügung:
+\begin{itemize} 
+	\item getspace $\rightarrow$ Zeigt aktuelle Belegung des Hochregallagers an
+	\item vsetspace[x][y] $\rightarrow$ Definiert einen Platz als schon belegt
+	\item clearspace[x][y] $\rightarrow$ Definiert einen Platz als frei
+	\item insert[x][y] $\rightarrow$ Holt ein Klötzchen vom Eingabe-Slot und legt es an gewünschter Position im Hochregallager ab
+	\item remove[x][y] $\rightarrow$ Holt ein Klötuchen von der gewünschten Position ab und legt es an den Ausgabe-Slot
+\end{itemize}
+
+Sollte ein Befehl nicht möglich sein, da zum Beispiel ein Hochregallagerplatz oder der Ausgabe-Slot bereits belegt ist, wird der Anwender durch eine Fehlermeldung in der Konsole darauf aufmerksam gemacht und der Befehl nicht ausgeführt.
+
+Die Visualisierung des Hochregallagers erfolgt ebenfalls in der Konsole, in welcher sowohl das Hochregal und dessen Belegung als auch die Position des Turms und dessen Auslegers, durch ASCI-Zeichen stilisiert dargestellt werden.
+
+\subsection{Entwicklungsumgebung und Programmierung}
+Als Entwicklungs- und Testumgebung wurde Windriver Workbench 3.3 genutz und die Programmiersprache C verwendet.
+Es wurden für das Echtzeitbetriebssystem Vxworks Libaries inkludiert .
+
+
