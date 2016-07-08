@@ -5,7 +5,7 @@
  * readcommand.h
  *
  *  Created on: 13.01.2010
- *      Author: Oliver Jack
+ *      Author: Captian Jack
  */
 
 #include <string.h> //compare

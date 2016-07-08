@@ -5,7 +5,7 @@
  * Busdata.h
  *
  *  Created on: 05.01.2010
- *      Author: Oliver Jack
+ *      Author: Captain Jack
  */
 
 #define UINT unsigned int

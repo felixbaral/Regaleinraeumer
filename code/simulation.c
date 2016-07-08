@@ -156,7 +156,6 @@ void Simulation_Beweger(void)
 		}
 		if ( (AktorBusData.abits.aearra == 1) && (AktorBusData.abits.aearre == 0) ){
 			TickCountOutput--;
-			printf("TickCountOutput: %d\n", TickCountOutput);
 		}
 		
 		taskDelay(Delay_Time_Simulation);

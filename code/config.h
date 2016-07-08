@@ -1,6 +1,7 @@
 #ifndef DOUBLE_INCLUDE_CHECK_CONFIG
 #define DOUBLE_INCLUDE_CHECK_CONFIG
 
+//grundlegende Dimension des HRL
 #define towerHeight 5 	// Y-Fächer
 #define towerWidth 10	// X-Fächer
 #define towerDepth  3	// Z-Ebenen
@@ -16,10 +17,9 @@
 #define MSG_Q_CMD_MAX_Messages 200 //Wie viele Befehle dürfen in der Warteschlange stehen?
 
 
-
 //----- SIMULATION -------------------------
-#define StartPositionX 0
-#define StartPositionY 0
+#define StartPositionX 9
+#define StartPositionY 5
 #define StartPositionZ 1
 
 

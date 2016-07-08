@@ -4,7 +4,7 @@
  * readcommand.c
  *
  *  Created on: 13.01.2010
- *      Author: Oliver Jack
+ *      Author: Captain Jack
  */
 
 

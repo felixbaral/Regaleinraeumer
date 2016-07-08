@@ -6,11 +6,10 @@
 #include "msgQLib.h"
 #include "config.h"
 
-
-
 // Msg-Queue Steuerung->Visualisierung
 MSG_Q_ID msgQvisualisierung;
 
+// Struct zur Uebergabe/Uebername der Turm-Position, Lichtschranken/Sensorstati und Belegung
 typedef struct{
 	int towerX;
 	int towerY;
@@ -20,6 +19,7 @@ typedef struct{
 	bool carry;
 	bool matrix[10][5]; //  [x][y]
 } UIdata;
+// Union fuer char Wert des Structs fuer msgQ
 typedef union{
 	UIdata data;
 	char charvalue[sizeof(UIdata)];
