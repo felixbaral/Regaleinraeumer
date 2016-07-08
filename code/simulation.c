@@ -170,7 +170,7 @@ void Simulation_Sensor(int id)
     int previousY = 0;
     int previousZ = 0;
     bool firstStepTaken = false;
-    bool firstStepOutputTaken = false;
+    bool secondStepTaken = false;
     bool boxOnLichttaster = false;
     
     
@@ -248,7 +248,9 @@ void Simulation_Sensor(int id)
 							{
 								returnValue.result.value = false;  
 								firstStepTaken = false;	
+								secondStepTaken = true;
 								TickCountOutput = Delay_Time_IO_Slots;
+								boxOnLichttaster = false;
 							}
 							// innen -> im Regal
 							else if(towerPositionZ == 0)
@@ -258,6 +260,8 @@ void Simulation_Sensor(int id)
 								{
 									returnValue.result.value = false;
 									firstStepTaken = false;
+									secondStepTaken = true;
+									boxOnLichttaster = false;
 								}
 							}
 						}
@@ -276,8 +280,10 @@ void Simulation_Sensor(int id)
 								{
 									returnValue.result.value = true; 
 									firstStepTaken = false;
+									secondStepTaken = true;
 									TickCountInput = Delay_Time_IO_Slots;
 									boxOnLichttaster = true;
+									printf("Box wurde auf Lichttaster gelegt");
 								}
 							}
 							// innen -> im Regal
@@ -288,23 +294,31 @@ void Simulation_Sensor(int id)
 								{
 									returnValue.result.value = true;
 									firstStepTaken = false;
+									secondStepTaken = true;
 									boxOnLichttaster = true;
+									printf("Box wurde auf Lichttaster gelegt");
+
 								}
 							}
 						}
 					}
             	}
-				// first step: von unten rangefahren?
-                else if((towerPositionZ == 2*sensorDistanceZ || towerPositionZ == 0) && (towerPositionX != previousX || towerPositionY != previousY || towerPositionZ != previousZ))
+				// first step: von unten rangefahren? //TODO: bedingung \/ richtig?
+                else if((towerPositionZ == 2*sensorDistanceZ) && (towerPositionZ != previousZ))
 				{
 					firstStepTaken = true;
 					returnValue.result.value = boxOnLichttaster;
+	            	printf("habe ersten schritt genommen -----  \n");
+
 				}
                 else 
                 {
 					returnValue.result.value = boxOnLichttaster;
                 	firstStepTaken = false;
+                	secondStepTaken = false;
                 }
+            	printf("Box auf Lichttaster: %d \n", boxOnLichttaster);
+            	printf("First step: %d \n", firstStepTaken);
             }
             //TODO: TickCount(er) müssen noch zurückgesetzt werden
             else if (id == 23){ //Eingabe (links)

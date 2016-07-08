@@ -38,7 +38,6 @@ void main_user_input(){
 	while(1){
 		cmd = readcommand();
 		if (cmd.parse_ok) {
-			
 			cmdQ.bits.x = cmd.par1;
 			cmdQ.bits.y = cmd.par2;			
 			if ( strcmp(cmd.cmd, "vsetspace") == 0 ){
