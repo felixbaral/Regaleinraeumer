@@ -35,7 +35,7 @@ void visualisierung(){
 		else{
 			
 			printf("\n\n\n\n");
-			
+			printf("    0  1  2  3  4  5  6  7  8  9\n");
 			for (y = 0; y < (2*towerHeight); y++) {  // für jede Zeile
 				if ( output.data.towerY == y){		 //Zeilenanfang mit Pfeil für yPos vom Tower
 					printf("=>");
@@ -56,7 +56,7 @@ void visualisierung(){
 						else belegt = ' ';
 						printf("|%c%c", belegt, belegt);
 					}
-					printf("|\n");
+					printf("| %d\n", 4-y/2);
 				}		
 			}
 			

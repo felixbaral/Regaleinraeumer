@@ -105,7 +105,7 @@ void HRL_Steuerung_Movement(){
 		HRL_Steuerung_GetNewJob(); //auto pause
 		
 		while(msgQNumMsgs(mesgQueueIdNextMovement) > 0){
-			printf("i got %d job(s) to move my ass\n", msgQNumMsgs(mesgQueueIdNextMovement));
+			//printf("i got %d job(s) to move my ass\n", msgQNumMsgs(mesgQueueIdNextMovement));
 			if(msgQReceive(mesgQueueIdNextMovement, nextmove.charvalue, sizeof(nextmove.charvalue), WAIT_FOREVER) == ERROR)
 				printf("msgQ (NextMove) Receive in HRL_Steuerung_Movement failed\n");	
 			waitForSensor = true;
@@ -170,29 +170,20 @@ void HRL_Steuerung_Movement(){
 				// Lichtschranke
 				if (nextmove.move.IO != DontCare){
 					if ( (lastSensorX == PositionXinput) ){ //wir sind beim Input
-						if( (nextmove.move.IO == IO_GetBreak)  && (nextmove.move.IO =! lastInputState) ){
+						if( (nextmove.move.IO == IO_GetBreak)  && (lastInputState != IO_GetBreak) ){
 							aktorData.abits.aealre=1;
 							aktorData.abits.aealra=0;
-							waitForSensor = true;
-						}
-						else if ( (nextmove.move.IO == IO_GetFree) && (nextmove.move.IO =! lastInputState) )//GetFree
-						{	
-							aktorData.abits.ayu = 0;
-							aktorData.abits.ayo = 1;
+							printf("Input-Slot soll voll werden \n");
 							waitForSensor = true;
 						}
 					}
 					else if ( (lastSensorX == PositionXoutput) ){ //wir sind beim Output
-						if( (nextmove.move.IO == IO_GetFree) && (nextmove.move.IO =! lastInputState) ) {
+						printf("lastOutputState: %d \n", lastOutputState);
+						printf("nextMoveIO: %d \n", nextmove.move.IO);
+						if( (nextmove.move.IO == IO_GetFree) && (lastOutputState !=  IO_GetFree) ) {
 							aktorData.abits.aearra=1;
 							aktorData.abits.aearre=0;
-							printf("lets move out with this shit \n");
-							waitForSensor = true;
-						}
-						else if ( (nextmove.move.IO == IO_GetBreak)  && (nextmove.move.IO =! lastInputState) )
-						{ //GetBreak
-							aktorData.abits.ayo = 0;
-							aktorData.abits.ayu = 1;
+							printf("Output-Slot soll leer werden \n");
 							waitForSensor = true;
 						}
 					}
@@ -232,11 +223,6 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 		returnvalue.l = 0;
 	}
 	else{
-		/*for (i = 0; i < 10; i++) {
-			unsigned int k;
-			k = returnvalue.l & (1<(i));
-			printf("y:%d = %d\n",i,k);
-		}*/
 		// X-Achse
 		errorcount= (-1);
 		for (i = 0; i < 10; i++) {
@@ -340,7 +326,7 @@ void HRL_Steuerung_GetNewJob()
 
 	static int pause;
 	int timeout[2] = {350, WAIT_FOREVER};
-	printf("Go and get a new Job, Bitch!\n");
+	//printf("Go and get a new Job, Bitch!\n");
 	if(msgQReceive(mesgQueueIdCmd, cmdData.charvalue, sizeof(cmdData.charvalue), timeout[pause]) == ERROR) {//etwa 5 Sekunden Timeout
 		if( msgQNumMsgs(mesgQueueIdCmd) == 0){
 			printf("Pause Job!\n");
@@ -354,12 +340,11 @@ void HRL_Steuerung_GetNewJob()
 		}
 	}
 	else{
-		printf("normal Job!\n");
 		pause = 0;
 		if (cmdData.bits.highprio){
 			belegungsMatrix[cmdData.bits.x][cmdData.bits.y] = cmdData.bits.cmd;
 		}else if (cmdData.bits.cmd){//insert xy
-			printf("insert Job erkannt");
+			//printf("insert Job erkannt");
 			// 1 - zum Einlader
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = PositionXinput;
@@ -407,7 +392,7 @@ void HRL_Steuerung_GetNewJob()
 			HRL_Steuerung_GetNewJob_Qsend(next3D);	
 			
 		}else{//remove xy
-			printf("remove Job erkannt");
+			//printf("remove Job erkannt");
 			// 1 - zu Einlagerungsstelle fahren (y-unten)
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = cmdData.bits.x;

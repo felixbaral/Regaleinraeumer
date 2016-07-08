@@ -246,22 +246,27 @@ void Simulation_Sensor(int id)
 							// außen -> Ein ausgabe slots
 							if(towerPositionZ == 2*sensorDistanceZ)
 							{
+								//printf("b1");
 								returnValue.result.value = false;  
 								firstStepTaken = false;	
 								secondStepTaken = true;
 								TickCountOutput = Delay_Time_IO_Slots;
 								boxOnLichttaster = false;
+								//printf("Box wurde von Lichttaster genommen\n");
 							}
 							// innen -> im Regal
 							else if(towerPositionZ == 0)
 							{
 								// da ist kein päckchen im regal an dieser stelle
-								if(!belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/sensorDistanceY])
+								if(!belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/(sensorDistanceY*2)])
 								{
+									//printf("b2");
+
 									returnValue.result.value = false;
 									firstStepTaken = false;
 									secondStepTaken = true;
 									boxOnLichttaster = false;
+									//printf("Box wurde von Lichttaster genommen\n");
 								}
 							}
 						}
@@ -269,9 +274,13 @@ void Simulation_Sensor(int id)
 					// Aufnahme
 					else
 					{
+	            		//printf("Aufnahme State \n");
+
 						// nach oben gefahren ... aufnahme?
 						if(previousY > towerPositionY)
 						{
+		            		//printf("nach oben gefahren State \n");
+
 							// außen -> Ein ausgabe slots
 							if(towerPositionZ == 2*sensorDistanceZ)
 							{
@@ -283,20 +292,24 @@ void Simulation_Sensor(int id)
 									secondStepTaken = true;
 									TickCountInput = Delay_Time_IO_Slots;
 									boxOnLichttaster = true;
-									printf("Box wurde auf Lichttaster gelegt");
+									//printf("Box wurde auf Lichttaster gelegt\n");
 								}
 							}
 							// innen -> im Regal
 							else
 							{
+								//printf("innen State \n");
+								//printf("paket: %d \n", belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/(sensorDistanceY*2)]);
+								//printf("koordinaten: %d, %d \n", towerPositionX/sensorDistanceX, towerPositionY/(sensorDistanceY*2));
 								// da ist ein päckchen im regal an dieser stelle
-								if(belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/sensorDistanceY])
+								if(belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/(sensorDistanceY*2)])
 								{
+									//printf("da ist ein paket \n");
 									returnValue.result.value = true;
 									firstStepTaken = false;
 									secondStepTaken = true;
 									boxOnLichttaster = true;
-									printf("Box wurde auf Lichttaster gelegt");
+									//printf("Box wurde auf Lichttaster gelegt\n");
 
 								}
 							}
@@ -304,21 +317,24 @@ void Simulation_Sensor(int id)
 					}
             	}
 				// first step: von unten rangefahren? //TODO: bedingung \/ richtig?
-                else if((towerPositionZ == 2*sensorDistanceZ) && (towerPositionZ != previousZ))
+            	
+                else if((towerPositionZ == 2*sensorDistanceZ) || (towerPositionZ == 0))
 				{
 					firstStepTaken = true;
 					returnValue.result.value = boxOnLichttaster;
-	            	printf("habe ersten schritt genommen -----  \n");
+	            	//printf("habe ersten schritt genommen -----  \n");
 
 				}
-                else 
+                else
                 {
 					returnValue.result.value = boxOnLichttaster;
                 	firstStepTaken = false;
                 	secondStepTaken = false;
+                	//printf("du sollte das programmieren an den nagel haengen\n");
                 }
-            	printf("Box auf Lichttaster: %d \n", boxOnLichttaster);
-            	printf("First step: %d \n", firstStepTaken);
+
+            	//printf("Box auf Lichttaster: %d \n", boxOnLichttaster);
+            	//printf("First step: %d \n", firstStepTaken);
             }
             //TODO: TickCount(er) müssen noch zurückgesetzt werden
             else if (id == 23){ //Eingabe (links)
