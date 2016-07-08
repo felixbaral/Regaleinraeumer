@@ -14,11 +14,13 @@
 	\label{gantt}
 \end{figure}
 
+Alle Tasks in der Simulation hab selbe Priorität (200) und ändern diese nicht. Sie werden in einer festen Reihenfolge gespawned und laufen dann in jedem Zyklus in dieser Reihenfolge.
+
 \paragraph{Beweger}
 Wie in Abb.\ref{gantt} zu sehen ist läuft der \textbf{Beweger} als erster Task eines Simulationsschrittes. Zuerst aktualisiert er die Aktorwerte aus der gloablen Variable \textbf{AktorBusData}. Diese entspricht den Busdaten \todo{entspricht was?} und ist durch einen Semaphor geschützt. Da die Simulation minimal blockiert werden soll implementiert der Semaphor Prioritätsvererbung. Daraufhin \glqq verschiebt\grqq er den Turm entsprechend den Aktordaten.
 
 \paragraph{Sensorcollector}
-Der \textbf{Sensorcollector} sammelt aus der \textbf{MessageQueue} die Einträge aller Sensoren. Wenn ein Sensor ausfällt bleibt der Wert des Sensors auf 1.
+Der \textbf{Sensorcollector} läuft nach allen Sensoren und sammelt  aus einer Message Queue die Einträge aller Sensoren. Wenn ein Sensor ausfällt bleibt der Wert des Sensors auf 1. Daraufhin schiebt er alle Sensorwerte, in einem Vektor, in eine Messega Queue auf die die Steuerung Zugriff hat.
 
 \paragraph{Simulation Sensor x}
 Jeder Sensor bekommt eine id übergeben die seine Funktion und ihn eindeutig definiert. 
@@ -26,8 +28,8 @@ Jeder Sensor bekommt eine id übergeben die seine Funktion und ihn eindeutig def
 \item \textbf{Tastsensoren} überprüfen ob die Turmposition mit der Sensorposition übereinstimmt.
 \item \textbf{Lichtschranken} Simulieren entweder das eintreffen eines Klötzchens am Eingabeslot oder das Entfernen eines Klötzchens am Ausgabeslot, jeweils mit einem vordefinierten Delay. \todo{Das könnte besser sein}
 \item Der \textbf{Lichttaster} im Turm wird dann ausgelöst wenn die vorige y-Position des Turms im vorigen Schritt über (beim Ablegen eines Klötzchens) bzw. unter (beim Aufnehmen) der jetzigen Position ist und (beim Ablegen) ein Klötzchen im Turm ist bzw. (beim Aufnehmen) ein Klötzchen an der Aufnahmeposition ist.
-
 \end{enumerate}
+Die jeweiligen Sensordaten schiebt der Task daraufhin in eine Message Queue für den Sensorcollector.
 \begin{table}[h]
 \centering
 \begin{tabular}{|l|r|}
@@ -45,6 +47,6 @@ Lichtschranke Ausgabe & [unterbrochen|nicht unterbrochen] \\
 Turmlichtschalter & [bedeckt|nicht bedeckt]\\
 \hline
 \end{tabular}
-\caption{Requirements Dictionary}
+\caption{Requirements Dictionary: Die Stati der Sensoren}
 \label{tab:Requirements Dictionary}
 \end{table}
