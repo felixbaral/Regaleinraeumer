@@ -320,7 +320,7 @@ void HRL_Steuerung_Movement_GetSensorBusData_ERROR(char* msg){
 
 void HRL_Steuerung_GetNewJob()
 {
-	//obere Prio zuerst //danach normal
+	UIdataUnion visu;
 	NextMovement next3D;
 	cmdQdata cmdData;
 	static int integrityCheckCounter;
@@ -348,9 +348,21 @@ void HRL_Steuerung_GetNewJob()
 		if (cmdData.bits.highprio){
 			integrityCheckCounter = msgQNumMsgs(mesgQueueIdCmd);
 			belegungsMatrix[cmdData.bits.x][cmdData.bits.y] = cmdData.bits.cmd;
+			
+			visu.data.towerX=lastSensorX;
+			visu.data.towerY=lastSensorY;
+			visu.data.towerZ=lastSensorZ;
+			visu.data.carry = lastCarryState;
+			visu.data.input = lastInputState;
+			visu.data.output = lastOutputState;
+			memcpy(visu.data.matrix, belegungsMatrix, sizeof(belegungsMatrix));
+			if((msgQSend(msgQvisualisierung, visu.charvalue, sizeof(visu.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
+				printf("msgQSend Visualisierung übertragen: übersprungen\n");	
+
+			
 		}else if (cmdData.bits.cmd){//insert xy
 			//printf("insert Job erkannt");
-			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.x] == true) ){
+			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.y] == true) ){
 				printf("ungueltiger insert-Befehl entfernt\n");
 			}
 			else{
@@ -402,7 +414,7 @@ void HRL_Steuerung_GetNewJob()
 			}
 		}else{//remove xy
 			//printf("remove Job erkannt");
-			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.x] == false) ){
+			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.y] == false) ){
 				printf("ungueltiger output-Befehl entfernt\n");
 			}
 			else{
