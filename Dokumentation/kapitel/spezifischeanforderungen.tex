@@ -28,3 +28,23 @@ Jeder Sensor bekommt eine id übergeben die seine Funktion und ihn eindeutig def
 \item Der \textbf{Lichttaster} im Turm wird dann ausgelöst wenn die vorige y-Position des Turms im vorigen Schritt über (beim Ablegen eines Klötzchens) bzw. unter (beim Aufnehmen) der jetzigen Position ist und (beim Ablegen) ein Klötzchen im Turm ist bzw. (beim Aufnehmen) ein Klötzchen an der Aufnahmeposition ist.
 
 \end{enumerate}
+\begin{table}[h]
+\centering
+\begin{tabular}{|l|r|}
+\hline
+Taster X[0-9] &  [gedrückt|gehalten] \\
+\hline
+Taster Y[0-9] &  [gedrückt|gehalten] \\
+\hline
+Taster Z[0-3] &  [gedrückt|gehalten] \\
+\hline
+Lichtschranke Eingabe & [unterbrochen|nicht unterbrochen] \\
+\hline
+Lichtschranke Ausgabe & [unterbrochen|nicht unterbrochen] \\
+\hline
+Turmlichtschalter & [bedeckt|nicht bedeckt]\\
+\hline
+\end{tabular}
+\caption{Requirements Dictionary}
+\label{tab:Requirements Dictionary}
+\end{table}
