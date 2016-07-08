@@ -18,7 +18,6 @@
 
 
 //----- SIMULATION -------------------------
-
 #define StartPositionX 0
 #define StartPositionY 0
 #define StartPositionZ 1
@@ -28,8 +27,8 @@
 #define Delay_Time_Simulation 20
 
 // EA-Slots (Eingabe links)
-#define PositionXinput 5
-#define PositionYinput 5
+#define PositionXinput 1
+#define PositionYinput 8
 #define PositionXoutput 9
 #define PositionYoutput 8
 

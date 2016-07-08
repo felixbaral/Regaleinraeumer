@@ -26,6 +26,6 @@ typedef union{
 	long double l; 
 }UIdataUnion;
 
-void visualisierung();
+void visualisierung_init();
 
 #endif /*VISUALISIERUNG */

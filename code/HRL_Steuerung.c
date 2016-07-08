@@ -173,17 +173,17 @@ void HRL_Steuerung_Movement(){
 						if( (nextmove.move.IO == IO_GetBreak)  && (lastInputState != IO_GetBreak) ){
 							aktorData.abits.aealre=1;
 							aktorData.abits.aealra=0;
-							printf("Input-Slot soll voll werden \n");
+							//printf("Input-Slot soll voll werden \n");
 							waitForSensor = true;
 						}
 					}
 					else if ( (lastSensorX == PositionXoutput) ){ //wir sind beim Output
-						printf("lastOutputState: %d \n", lastOutputState);
-						printf("nextMoveIO: %d \n", nextmove.move.IO);
+						//printf("lastOutputState: %d \n", lastOutputState);
+						//printf("nextMoveIO: %d \n", nextmove.move.IO);
 						if( (nextmove.move.IO == IO_GetFree) && (lastOutputState !=  IO_GetFree) ) {
 							aktorData.abits.aearra=1;
 							aktorData.abits.aearre=0;
-							printf("Output-Slot soll leer werden \n");
+							//printf("Output-Slot soll leer werden \n");
 							waitForSensor = true;
 						}
 					}
@@ -323,121 +323,135 @@ void HRL_Steuerung_GetNewJob()
 	//obere Prio zuerst //danach normal
 	NextMovement next3D;
 	cmdQdata cmdData;
-
+	static int integrityCheckCounter;
 	static int pause;
 	int timeout[2] = {350, WAIT_FOREVER};
 	//printf("Go and get a new Job, Bitch!\n");
 	if(msgQReceive(mesgQueueIdCmd, cmdData.charvalue, sizeof(cmdData.charvalue), timeout[pause]) == ERROR) {//etwa 5 Sekunden Timeout
 		if( msgQNumMsgs(mesgQueueIdCmd) == 0){
-			printf("Pause Job!\n");
+			//printf("Pause Job!\n");
 			pause = 1;
 			// Pause-Modus einleiten - Timeout
 			pause = true;
 			next3D = HRL_Steuerung_GetNewJob_DontCareState();
 			next3D.x = PositionXinput;
-			next3D.y = PositionYinput;
+			next3D.y = PositionYinput+1;
 			HRL_Steuerung_GetNewJob_Qsend(next3D);		
 		}
 	}
 	else{
 		pause = 0;
+		integrityCheckCounter--;
+		if (integrityCheckCounter < -5){ //Überlauf verhindern
+			integrityCheckCounter = -1;
+		}
 		if (cmdData.bits.highprio){
+			integrityCheckCounter = msgQNumMsgs(mesgQueueIdCmd);
 			belegungsMatrix[cmdData.bits.x][cmdData.bits.y] = cmdData.bits.cmd;
 		}else if (cmdData.bits.cmd){//insert xy
 			//printf("insert Job erkannt");
-			// 1 - zum Einlader
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.x = PositionXinput;
-			next3D.y = PositionYinput+1;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 2 - Arm ausfahren und auf Päckchen warten
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_IO;
-			next3D.IO = IO_GetBreak;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 3 - Päckchen auf Arm fahren
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.carry = Carry_Get;
-			next3D.IO = IO_GetFree;
-			next3D.y = PositionYinput-1; 
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 4 - Arm einfahren
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_Middle;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 5 - zu Einlagerungsstelle fahren (y-oben)
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.x = cmdData.bits.x;
-			next3D.y = cmdData.bits.y*2;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 6 - Arm ausfahren
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_Inside;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 7 - in Box absenken (y-unten)
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.y = cmdData.bits.y*2+1;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 8 - Arm einfahren
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_Middle;
-			next3D.allocation = 1;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);	
-			
+			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.x] == true) ){
+				printf("ungueltiger insert-Befehl entfernt\n");
+			}
+			else{
+				// 1 - zum Einlader
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.x = PositionXinput;
+				next3D.y = PositionYinput+1;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 2 - Arm ausfahren und auf Päckchen warten
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.z = Z_IO;
+				next3D.IO = IO_GetBreak;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 3 - Päckchen auf Arm fahren
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.carry = Carry_Get;
+				next3D.IO = IO_GetFree;
+				next3D.y = PositionYinput-1; 
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 4 - Arm einfahren
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.z = Z_Middle;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 5 - zu Einlagerungsstelle fahren (y-oben)
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.x = cmdData.bits.x;
+				next3D.y = cmdData.bits.y*2;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 6 - Arm ausfahren
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.z = Z_Inside;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 7 - in Box absenken (y-unten)
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.y = cmdData.bits.y*2+1;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 8 - Arm einfahren
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.z = Z_Middle;
+				next3D.allocation = 1;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);	
+			}
 		}else{//remove xy
 			//printf("remove Job erkannt");
-			// 1 - zu Einlagerungsstelle fahren (y-unten)
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.x = cmdData.bits.x;
-			next3D.y = cmdData.bits.y*2+1;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 2 - Arm ausfahren
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_Inside;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 3 - in Box heben (y-oben)
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.y = cmdData.bits.y*2;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 4 - Arm einfahren
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_Middle;
-			next3D.allocation = 0;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 5 - zum Auslader
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.x = PositionXoutput;
-			next3D.y = PositionYoutput-1;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 6 - Arm ausfahren und auf freien Slot warten
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_IO;
-			next3D.IO = IO_GetFree;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 7 - Päckchen von Arm fahren
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.carry = Carry_Give;
-			next3D.IO = IO_GetBreak;
-			next3D.y = PositionYoutput+1;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
-			
-			// 8 - Arm einfahren
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.z = Z_Middle;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);
+			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.x] == false) ){
+				printf("ungueltiger output-Befehl entfernt\n");
+			}
+			else{
+				// 1 - zu Einlagerungsstelle fahren (y-unten)
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.x = cmdData.bits.x;
+				next3D.y = cmdData.bits.y*2+1;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 2 - Arm ausfahren
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.z = Z_Inside;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 3 - in Box heben (y-oben)
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.y = cmdData.bits.y*2;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 4 - Arm einfahren
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.z = Z_Middle;
+				next3D.allocation = 0;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 5 - zum Auslader
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.x = PositionXoutput;
+				next3D.y = PositionYoutput-1;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 6 - Arm ausfahren und auf freien Slot warten
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.z = Z_IO;
+				next3D.IO = IO_GetFree;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 7 - Päckchen von Arm fahren
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.carry = Carry_Give;
+				next3D.IO = IO_GetBreak;
+				next3D.y = PositionYoutput+1;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+				
+				// 8 - Arm einfahren
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.z = Z_Middle;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+			}
 		}
 	}		
 }

@@ -30,11 +30,11 @@ typedef struct {
 typedef union {
 	char charvalue; // Für MessageQueue
 	Sensorresult result;
-} MessageQSensorresult;
+} SensorResultUnion;
 
 //----------------------------------------------------------
 
-void Simulation_Sensorverwaltung(void);
+void Simulation_Beweger(void);
 void Simulation_Sensor(int id);
 void Simulation_SensorCollector(void);
 bool triggersX(int x);
@@ -72,7 +72,7 @@ int Simulation_init(void){
 		semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO, SEM_FULL);
 		printf("Semaphore fuer Simulation <-> Steuerung erstellt \n");
 		
-		taskSpawn("SensorVerwaltung", Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Sensorverwaltung, 0,0,0,0,0,0,0,0,0,0);
+		taskSpawn("SensorBeweger", Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Beweger, 0,0,0,0,0,0,0,0,0,0);
 			
 		int i;
 		for (i=0; i < 26; i++)
@@ -88,7 +88,7 @@ int Simulation_init(void){
 	
 }
 
-void Simulation_Sensorverwaltung(void)
+void Simulation_Beweger(void)
 {
 	printf("Start: Task - Sensorverwaltung \n");
 	abusdata AktorBusData;
@@ -174,7 +174,7 @@ void Simulation_Sensor(int id)
     bool boxOnLichttaster = false;
     
     
-    MessageQSensorresult returnValue;
+    SensorResultUnion returnValue;
 	returnValue.result.id = id;
 	int triggerOffset;
 
@@ -383,7 +383,7 @@ bool triggersZ(int z)
 void Simulation_SensorCollector(void){
 	sbusdata sensorBusData;
 	int i;
-	MessageQSensorresult ValueToBus;
+	SensorResultUnion ValueToBus;
 	
 	printf("Start: Task - SensorCollector \n");
 	while(1)

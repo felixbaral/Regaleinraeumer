@@ -1,5 +1,7 @@
 #include "visualisierung.h"
 
+void visualisierung();
+
 void visualisierung_init(){
 	if ((msgQvisualisierung = msgQCreate(2,sizeof(UIdata),MSG_Q_FIFO))	== NULL)
 		printf("msgQCreate in visualisierung_init failed\n");
@@ -10,23 +12,12 @@ void visualisierung_init(){
 }
 
 void visualisierung(){
-	/* lokale Variable */
 	int xtemp;
 	int ztemp;
 	char belegt;
 	int y;
 	int x;
-	
 	UIdataUnion output;
-	
-	/* Testparam*/
-	/*belegung[4][2] = true;
-	xpos[1]= true;
-	ypos[2]= true;
-	ypos[6]= false;
-	ypos[7]= false;
-	ypos[8]= false;
-	zpos[2]= true;*/
 	 	
 	while(1){
 		//printf("Visualisierung will visualisieren! \n\n\n");
