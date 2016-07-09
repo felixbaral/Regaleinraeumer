@@ -14,10 +14,10 @@
 	\label{gantt}
 \end{figure}
 
-Alle Tasks in der Simulation hab selbe Priorität (200) und ändern diese nicht. Sie werden in einer festen Reihenfolge gespawned und laufen dann in jedem Zyklus in dieser Reihenfolge.
+Alle Tasks in der Simulation haben eine Priorität von 200 und ändern diese nicht. Sie werden in einer festen Reihenfolge erzeugt und laufen dann in jedem Zyklus in dieser Sequenz.
 
 \paragraph{Beweger}
-Wie in Abb.\ref{gantt} zu sehen ist läuft der \textbf{Beweger} als erster Task eines Simulationsschrittes. Zuerst aktualisiert er die Aktorwerte aus der gloablen Variable \textbf{AktorBusData}. Diese entspricht den Busdaten \todo{entspricht was?} und ist durch einen Semaphor geschützt. Da die Simulation minimal blockiert werden soll implementiert der Semaphor Prioritätsvererbung. Daraufhin \glqq verschiebt\grqq er den Turm entsprechend den Aktordaten.
+Wie in Abb.\ref{gantt} zu sehen ist läuft der \textbf{Beweger} als erster Task eines Simulationsschrittes. Zuerst aktualisiert er die Aktorwerte aus der gloablen Variable \textbf{AktorBusData}. Diese entspricht den Busdaten \todo{entspricht was?} und ist durch eine Semaphore geschützt. Da die Simulation minimal blockiert werden soll implementiert die Semaphore eine Prioritätsvererbung. Daraufhin \glqq verschiebt\grqq   er den virtuellen Turm entsprechend der Aktordaten.
 
 \paragraph{Sensorcollector}
 Der \textbf{Sensorcollector} läuft nach allen Sensoren und sammelt  aus einer Message Queue die Einträge aller Sensoren. Wenn ein Sensor ausfällt bleibt der Wert des Sensors auf 1. Daraufhin schiebt er alle Sensorwerte, in einem Vektor, in eine Messega Queue auf die die Steuerung Zugriff hat.
