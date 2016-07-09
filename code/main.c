@@ -37,10 +37,17 @@ void main_user_input(){
 		}
 	}
 	taskPrioritySet(taskIdSelf(), Priority_Main ); //eigene Prio runter 
-	
+		
 	
 	while(1){
-		cmd = readcommand();	// auf Eingabe von User warten
+		cmd = readcommand();								// auf Eingabe von User warten
+		if ( zusatz && !msgQNumMsgs(mesgQueueIdCmd) ){ 		//zusatzaufgabe ändert Belegung, was übertragen werden muss
+			for (x = 0; x < 10; x++) {		
+				for (y = 0; y < 5; y++) {
+					belegung[x][y]=belegungsMatrix[x][y];
+				}
+			}
+		}
 		cmd.par2=(towerHeight-1)-cmd.par2;	// Y-Wert invertieren um logische Regalanordnung zu gewaehrleisten
 		
 		if (cmd.parse_ok){	// Eingabe OK?
@@ -55,12 +62,12 @@ void main_user_input(){
 			else {
 				// Überprüfung ob Insert-Befehl nicht auf volles Fach zeigt
 				if ( (strcmp(cmd.cmd, "insert") == 0) && (belegung[cmd.par1][cmd.par2]) ){	
-					printf("insert nicht möglich - angegebene Position[%d][%d] ist belegt\nUngueltige Eingabe ! \n", cmd.par1, (towerHeight-1)-cmd.par2);
+					printf("insert nicht moeglich - angegebene Position[%d][%d] ist belegt\nUngueltige Eingabe ! \n", cmd.par1, (towerHeight-1)-cmd.par2);
 					cmd.parse_ok=false;
 				}
 				// Überprüfung ob Remove-Befehle nicht auf leeres Fach zeigt
 				else if ( (strcmp(cmd.cmd, "remove")==0) && (belegung[cmd.par1][cmd.par2] == false) ){
-					printf("remove nicht möglich - angegebene Position[%d][%d] ist leer\nUngueltige Eingabe ! \n", cmd.par1, (towerHeight-1)-cmd.par2);
+					printf("remove nicht moeglich - angegebene Position[%d][%d] ist leer\nUngueltige Eingabe ! \n", cmd.par1, (towerHeight-1)-cmd.par2);
 					cmd.parse_ok=false;
 				}
 			}

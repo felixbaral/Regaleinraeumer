@@ -9,7 +9,7 @@
 #include "config.h"			// Userconfig
 
 // Selbsberechnug der Sensorenentfernungen auf einen ungeraden Wert fuer die X-Achse
-#define sensorDistanceX (SensorDistanceX + (1 - (SensorDistanceX %2) ) )
+#define sensorDistanceX (SensorDistanceX + (SensorDistanceX %2) )
 
 
 //Aktordaten - Steuerung zu Simulation (global)

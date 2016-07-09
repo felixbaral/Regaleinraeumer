@@ -1,6 +1,13 @@
 #ifndef DOUBLE_INCLUDE_CHECK_CONFIG
 #define DOUBLE_INCLUDE_CHECK_CONFIG
 
+/*
+ * für die Zusatzaufgabe bitte den define 
+ * auf 1 (an) oder 0 (aus) setzen
+ */
+#define zusatz 1
+
+
 //grundlegende Dimension des HRL
 #define towerHeight 5 	// Y-Fächer
 #define towerWidth 10	// X-Fächer
@@ -24,7 +31,7 @@
 
 
 //Task-Frequency
-#define Delay_Time_Simulation 20
+#define Delay_Time_Simulation 10
 
 // EA-Slots (Eingabe links)
 #define PositionXinput 1

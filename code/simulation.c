@@ -65,15 +65,17 @@ int Simulation_init(void){
 		return (-1);
 	}
 	else {
-		// Erzeuge Binär-Semaphore
-		semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO | SEM_INVERSION_SAFE, SEM_FULL);
+		// Erzeuge Binär-Semaphore mit Mutual-Exclusion zur Prioritäts-Inversion (Wartezustand vermeiden)
+		semBinary_SteuerungToSimulation = semMCreate(SEM_Q_PRIORITY | SEM_INVERSION_SAFE);
 		// printf("Semaphore fuer Simulation <-> Steuerung erstellt \n");
 		
 		// Task-Spawn von Sensor-Beweger, Sensor 0-25 und Sensor-Collector
 		taskSpawn("SensorBeweger", Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Beweger, 0,0,0,0,0,0,0,0,0,0);
+		char sensorname[20];
 		for (i=0; i < 26; i++)
 		{
-			taskSpawn("Sensor",Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
+			sprintf(sensorname, "Sensor %d", i);
+			taskSpawn(sensorname,Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
 		}
 		taskSpawn("SensorCollector", Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_SensorCollector, 0,0,0,0,0,0,0,0,0,0);
 		printf("Sensor & Sensorcollector gespawnt \n");
@@ -312,6 +314,11 @@ void Simulation_Sensor(int id)
                 	firstStepTaken = false;
                 	secondStepTaken = false;
                 }
+            	
+            	// Position abspeichern für Bewegungsmuster
+				previousX = towerPositionX;
+				previousY = towerPositionY;
+				previousZ = towerPositionZ;
             }
             else if (id == 23){ 			// Eingabe (links)
             	if (TickCountInput <= 0)	// Muss noch Zeit vergehen bis Eingabe voll ist
@@ -326,10 +333,6 @@ void Simulation_Sensor(int id)
 					returnValue.result.value = false;
 			}
 		}
-		// Position abspeichern für Bewegungsmuster
-        previousX = towerPositionX;
-        previousY = towerPositionY;
-        previousZ = towerPositionZ;
         
         // Daten in msgQ an Sensorcollector senden
 		if((msgQSend(mesgQueueIdSensorCollector,&returnValue.charvalue, 1, NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
