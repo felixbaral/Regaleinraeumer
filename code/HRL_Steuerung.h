@@ -17,12 +17,14 @@
 // Msg-Queue Eingabe->GetNewJob
 MSG_Q_ID mesgQueueIdCmd;
 
+// Struktur der Kommando-Übergabe
 typedef struct {
 	UINT highprio 	: 1; 
-	UINT cmd 		: 1; //TODO:shutdown?
-	UINT x			: 4; //1-10 (16)
-	UINT y			: 3; //1-5  (8)
+	UINT cmd 		: 1; 
+	UINT x			: 4; //0-9 (16)
+	UINT y			: 3; //0-4  (8)
 } commandbits;
+// Union für Char-Wert an msgQ
 typedef union{
 	char charvalue[sizeof(commandbits)];
 	commandbits bits;

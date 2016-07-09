@@ -7,10 +7,11 @@
  * 3: Lichtschranken
  * 4: Lichttaster
  */
-
+// Initialisierung der aktuellen Position durch Startparameter
 int towerPositionX = StartPositionX * sensorDistanceX;
 int towerPositionY = StartPositionY * sensorDistanceY;
 int towerPositionZ = StartPositionZ * sensorDistanceZ;
+// und der Ein- und Ausgabe-Slots
 int TickCountInput = Delay_Time_IO_Slots;
 int TickCountOutput = Delay_Time_IO_Slots;
 
@@ -18,17 +19,18 @@ int TickCountOutput = Delay_Time_IO_Slots;
 bool belegungsMatrix[10][5];// Wird noch nicht ausgefuellt
 
 // MessageQueue
-#define MSG_Q_MAX_Messages 200 //TODO: kleiner machen
+#define MSG_Q_MAX_Messages 200
 MSG_Q_ID mesgQueueIdSensorCollector;
 
-// Struct for Bus-Communication
+// Struct for Bus-Kommunikation
 typedef struct {
 	UINT id :7;
 	bool value : 1;
 } Sensorresult;
 
+// Für MessageQueue
 typedef union {
-	char charvalue; // Für MessageQueue
+	char charvalue; 
 	Sensorresult result;
 } SensorResultUnion;
 
@@ -37,6 +39,7 @@ typedef union {
 void Simulation_Beweger(void);
 void Simulation_Sensor(int id);
 void Simulation_SensorCollector(void);
+// In Sensor-Tasks aufgerufene Funktionen, die informieren ob der jeweile Sensor ausgelöst oder nicht
 bool triggersX(int x);
 bool triggersY(int y);
 bool triggersZ(int z);
@@ -45,36 +48,29 @@ bool triggersZ(int z);
 int Simulation_init(void){
 	printf("Start: Simulation \n");
 	bool abort = false;
-	sbusdata temp;
+	sbusdata temp;	// nur für Größe der zu übertragenden Daten in msgQ
+	int i;
 	
-	/* create message queue */
+	// Erzeugung der msgQ's
 	if ((mesgQueueIdSensorCollector = msgQCreate(MSG_Q_MAX_Messages,1,MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate in failed\n");
 		abort = true;
-	}
-	else{
-		printf("messageQ SensorCollector created\n");
-	}
-	
+	}	
 	if ((mesgQueueIdSensorData = msgQCreate(3,sizeof(temp.smsg),MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate in SensorCollector failed\n");
 		abort = true;
 	}
-	else {
-		printf("messageQ-SensorData created\n");
-	}
-		
+	
 	if (abort){
 		return (-1);
 	}
 	else {
-		/*create Binary Semaphore*/
-		semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO, SEM_FULL);
-		printf("Semaphore fuer Simulation <-> Steuerung erstellt \n");
+		// Erzeuge Binär-Semaphore
+		semBinary_SteuerungToSimulation = semBCreate(SEM_Q_FIFO | SEM_INVERSION_SAFE, SEM_FULL);
+		// printf("Semaphore fuer Simulation <-> Steuerung erstellt \n");
 		
+		// Task-Spawn von Sensor-Beweger, Sensor 0-25 und Sensor-Collector
 		taskSpawn("SensorBeweger", Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Beweger, 0,0,0,0,0,0,0,0,0,0);
-			
-		int i;
 		for (i=0; i < 26; i++)
 		{
 			taskSpawn("Sensor",Priority_Simulation, 0x100, 2000, (FUNCPTR)Simulation_Sensor,i,0,0,0,0,0,0,0,0,0);
@@ -88,29 +84,35 @@ int Simulation_init(void){
 	
 }
 
+/* 	
+ * 	Bekommt kontinuierlich Aktor-Daten und schiebt die Positionen virtuell weiter
+ *  um einzelnen Sensoren Grundlage für Zustandsabfrage zu bieten
+ */
 void Simulation_Beweger(void)
 {
 	printf("Start: Task - Sensorverwaltung \n");
-	abusdata AktorBusData;
-	AktorBusData.i=0;
-	int direction, inputticks, outputticks;
+	abusdata AktorBusData;			// regelmäßig auszulesende Daten
+	AktorBusData.i=0;				// Initialisierung alle Motoren auf inaktiven Zustand
+	int direction;					// Richtungserfassung des Motors
+	int inputticks, outputticks;	// Zeitkonstanten für Ein- und Ausgabe-Slot zum füllen bzw. leeren
 	while(true)
 	{
-		//printf("Will bewegen!\n");
-		// regelmaessige Abfrage + weitersetzen
+		// regelmaessige Abfrage der Aktordaten
 		semTake(semBinary_SteuerungToSimulation, WAIT_FOREVER); 
 		abusdata AktorBusData = SteuerungToSimulation;
 		semGive(semBinary_SteuerungToSimulation);
-
+		
+		// virtuelles Weitersetzen je nach Aktoraktivität
 		//x-Achse
 		direction = 0;
-		if (AktorBusData.abits.axl)
+		if (AktorBusData.abits.axl)	// doppelte Aktivierung in beiden Richtung wird mit Stillstand abgefangen
 			direction--;
 		if (AktorBusData.abits.axr)
 			direction++;
 		if (AktorBusData.abits.axs)
 			direction = direction * 2;
 		towerPositionX += direction;
+		// Abfangen von eventuellem Überlauf
 		if (towerPositionX < 0)
 			towerPositionX = 0;
 		if (towerPositionX > 9*sensorDistanceX)
@@ -120,12 +122,10 @@ void Simulation_Beweger(void)
 		direction = 0;
 		if (AktorBusData.abits.ayu)
 		{
-			//printf("Fahre nach unten \n");
 			direction++;
 		}
 		if (AktorBusData.abits.ayo)
 		{
-			//printf("Fahre nach oben \n");
 			direction--;
 		}
 		towerPositionY += direction;
@@ -151,68 +151,72 @@ void Simulation_Beweger(void)
 			towerPositionZ = 2*sensorDistanceZ;
 		
 		// Ein- & Ausgabe-Slot
-		if ( (AktorBusData.abits.aealre == 1) && (AktorBusData.abits.aealra == 0) ){
+		if ( (AktorBusData.abits.aealre == 1) && (AktorBusData.abits.aealra == 0) ){	// Fließband rein bewegen
 			TickCountInput--;
 		}
-		if ( (AktorBusData.abits.aearra == 1) && (AktorBusData.abits.aearre == 0) ){
+		if ( (AktorBusData.abits.aearra == 1) && (AktorBusData.abits.aearre == 0) ){	// Fließband raus bewegen
 			TickCountOutput--;
 		}
 		
+		/* 
+		 * Dieser Task hat höchste Priorität, daher muss er delayed werden um andere dran kommen zu lassen,
+		 * außerdem Frequenz-Takt der Hardware
+		 */
 		taskDelay(Delay_Time_Simulation);
 	}
 }
 
+/*
+ * 26 Task-Instanzen dieser Funktion
+ * Durchnummeriert mit Id
+ * Nummerierung wie in Busdata.h
+ */
 
 void Simulation_Sensor(int id)
 {
-    int previousX = 0;
+	// Bewegungsmustererkennung für Lichtsensorik
+    int previousX = 0;				
     int previousY = 0;
     int previousZ = 0;
     bool firstStepTaken = false;
     bool secondStepTaken = false;
-    bool boxOnLichttaster = false;
-    
-    
-    SensorResultUnion returnValue;
-	returnValue.result.id = id;
-	int triggerOffset;
 
-	if(id < 10)
+    bool boxOnLichttaster = false;		// Zustand des Lichttasters
+    SensorResultUnion returnValue;		// Format des von dem einzelnen Sensors in die msgQ geschriebenen Wertes
+    returnValue.result.id = id;			// Id des jeweiligen Sensors wird gespeichert
+	
+	int triggerOffset = 0;					// Variable der absoluten Position eines Sensor pro Achse mit Betrachtung der Zwischenabstände zwischen 2 Sensoren
+
+	// Berechnung des triggerOffsets
+	
+	if(id < 10)							// Y-Achse
 	{
-		// unten
-		if(id < 5)
+		if(id < 5)	// unten
 		{
 			triggerOffset = (id*2+1)*sensorDistanceY;
 		}
-		// oben
-		else
+		else		// oben
 		{
 			triggerOffset = (id-5)*2*sensorDistanceY;
 		}
 	}
-	// X-Achse
-	else if(id < 20)
+	else if(id < 20)					// X-Achse
 	{
 		triggerOffset = (id-10)*sensorDistanceX;
 	}
-	// Z-Achse
-	else if(id < 23)
+	else if(id < 23)					// Z-Achse
 	{
-		//Z=0: Arm im Regal drinne
+		//Z=0: Arm in Regal herein
 		triggerOffset = (id-20)*sensorDistanceZ;
 	}
-	// Lichtkram
-	else
-	{
-		//TODO:Lichtsensoren
-		//returnValue.result.value = 
-	}
 	printf("Start: Task - Sensor #%d mit offset: %d\n", id, triggerOffset);
-
-
-
+	// Ende der Triggeroffset-Berechnung	
+	
+	//----------------------------------------------------------------------------------------------------
+	
+	// Beginn des Arbeits-Loops
 	while(1)
-	{
+	{	//Unterscheidung nach Sensor-ID
 		if(id < 10)// Y-Sensoren
 		{
 			returnValue.result.value = triggersY(triggerOffset);
@@ -222,30 +226,26 @@ void Simulation_Sensor(int id)
 			returnValue.result.value = triggersX(triggerOffset);
 		}
 		else if(id < 23)// Z-Achse
-		{	//Z=0: Arm im Regal drinne
+		{	//Z=0: Arm in Regal herein
 			returnValue.result.value = triggersZ(triggerOffset);
 		}
 
 		else
 		{
-            // Lichttaster   Tower
-            if(id == 25)
+            if(id == 25)	// Lichttaster Tower
             {
-            	// hat sich zum vorigen step nicht bewegt auf x und z achse
+            	// hat sich zum vorherigen Schritt nicht auf X- und Z-Achse bewegt
             	if(firstStepTaken && (previousX == towerPositionX) && (towerPositionZ == towerPositionZ))
             	{
             		returnValue.result.value = boxOnLichttaster;
             		// Ausgabe
 					if(boxOnLichttaster)
 					{
-						
-						// nach unten gefahren ... ablegen?
+						// Bewegungsmuster nach unten -> Ablegungsmodus
 						if(previousY < towerPositionY)
 						{
-							// außen -> Ein ausgabe slots
-							if(towerPositionZ == 2*sensorDistanceZ)
+							if(towerPositionZ == 2*sensorDistanceZ)	// außen -> Ein-/Ausgabe-Slots
 							{
-								//printf("b1");
 								returnValue.result.value = false;  
 								firstStepTaken = false;	
 								secondStepTaken = true;
@@ -253,14 +253,11 @@ void Simulation_Sensor(int id)
 								boxOnLichttaster = false;
 								//printf("Box wurde von Lichttaster genommen\n");
 							}
-							// innen -> im Regal
-							else if(towerPositionZ == 0)
+							else if(towerPositionZ == 0)	// innen -> im Regal
 							{
-								// da ist kein päckchen im regal an dieser stelle
+								// es ist kein Klötzchen im Regal an dieser Stelle
 								if(!belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/(sensorDistanceY*2)])
 								{
-									//printf("b2");
-
 									returnValue.result.value = false;
 									firstStepTaken = false;
 									secondStepTaken = true;
@@ -273,18 +270,12 @@ void Simulation_Sensor(int id)
 					// Aufnahme
 					else
 					{
-	            		//printf("Aufnahme State \n");
-
-						// nach oben gefahren ... aufnahme?
+	            		// Bewegungsmuster nach oben -> Aufnahmemodus
 						if(previousY > towerPositionY)
-						{
-		            		//printf("nach oben gefahren State \n");
-
-							// außen -> Ein ausgabe slots
-							if(towerPositionZ == 2*sensorDistanceZ)
+						{	
+							if(towerPositionZ == 2*sensorDistanceZ)	// außen -> Ein-/Ausgabe-Slots
 							{
-								// da ist ein päckchen auf dem eingaslot
-								if(TickCountInput <= 0)
+								if(TickCountInput <= 0)// es ist ein Klötzchen auf dem Eingabe-Slot
 								{
 									returnValue.result.value = true; 
 									firstStepTaken = false;
@@ -294,66 +285,54 @@ void Simulation_Sensor(int id)
 									//printf("Box wurde auf Lichttaster gelegt\n");
 								}
 							}
-							// innen -> im Regal
-							else
+							else	// innen -> im Regal
 							{
-								//printf("innen State \n");
-								//printf("paket: %d \n", belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/(sensorDistanceY*2)]);
-								//printf("koordinaten: %d, %d \n", towerPositionX/sensorDistanceX, towerPositionY/(sensorDistanceY*2));
-								// da ist ein päckchen im regal an dieser stelle
-								if(belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/(sensorDistanceY*2)])
+								if(belegungsMatrix[towerPositionX/sensorDistanceX][towerPositionY/(sensorDistanceY*2)])	// ist ein Klötzchen im Regal an dieser Stelle?
 								{
-									//printf("da ist ein paket \n");
 									returnValue.result.value = true;
 									firstStepTaken = false;
 									secondStepTaken = true;
 									boxOnLichttaster = true;
 									//printf("Box wurde auf Lichttaster gelegt\n");
-
 								}
 							}
 						}
 					}
             	}
-				// first step: von unten rangefahren? //TODO: bedingung \/ richtig?
-            	
-                else if((towerPositionZ == 2*sensorDistanceZ) || (towerPositionZ == 0))
+
+                else if((towerPositionZ == 2*sensorDistanceZ) || (towerPositionZ == 0))	// erster Schritt: Z-Position auf einer Außenseite?   
 				{
 					firstStepTaken = true;
 					returnValue.result.value = boxOnLichttaster;
 	            	//printf("habe ersten schritt genommen -----  \n");
-
 				}
-                else
+                else //reset 
                 {
 					returnValue.result.value = boxOnLichttaster;
                 	firstStepTaken = false;
                 	secondStepTaken = false;
-                	//printf("du sollte das programmieren an den nagel haengen\n");
                 }
-
-            	//printf("Box auf Lichttaster: %d \n", boxOnLichttaster);
-            	//printf("First step: %d \n", firstStepTaken);
             }
-            //TODO: TickCount(er) müssen noch zurückgesetzt werden
-            else if (id == 23){ //Eingabe (links)
-            	if (TickCountInput <= 0)
+            else if (id == 23){ 			// Eingabe (links)
+            	if (TickCountInput <= 0)	// Muss noch Zeit vergehen bis Eingabe voll ist
             		returnValue.result.value = true;
             	else 
             		returnValue.result.value = false;
             }
-            else if (id == 24){ //Ausgabe (rechts)
-				if (TickCountOutput > 0)
+            else if (id == 24){ 			// Ausgabe (rechts)
+				if (TickCountOutput > 0)	// Muss noch Zeit vergehen bis Ausgabe leer ist
 					returnValue.result.value = true;
 				else 
 					returnValue.result.value = false;
 			}
 		}
+		// Position abspeichern für Bewegungsmuster
         previousX = towerPositionX;
         previousY = towerPositionY;
         previousZ = towerPositionZ;
         
-		if((msgQSend(mesgQueueIdSensorCollector,&returnValue.charvalue, 1, WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
+        // Daten in msgQ an Sensorcollector senden
+		if((msgQSend(mesgQueueIdSensorCollector,&returnValue.charvalue, 1, NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
 			printf("msgQSend in Sensor #%d failed\n", id);			
 				
 		taskDelay(Delay_Time_Simulation);
@@ -361,6 +340,10 @@ void Simulation_Sensor(int id)
     
 }
 
+/* 
+ * In Sensor-Tasks aufgerufene Funktionen, die informieren ob der jeweile Sensor ausgelöst oder nicht
+ * Vegleich: Virtueller- mit Sensor-Position
+ */
 bool triggersX(int x)
 {
 	if(towerPositionX == x) return true;
@@ -379,22 +362,27 @@ bool triggersZ(int z)
 	return false;
 }
 
+/*
+ * Sammeln der einzelnen Sensordaten und Zusammenfassen
+ * anschließende Übertragung über msgQ an HRL_Steuerung
+ */
 void Simulation_SensorCollector(void){
-	sbusdata sensorBusData;
-	int i;
-	SensorResultUnion ValueToBus;
+	sbusdata sensorBusData;			// Füllvariable Collector -> Steuerung
+	int i;							// Zählvariable
+	SensorResultUnion ValueToBus;	// Füllvariable Sensor -> Collector
 	
 	printf("Start: Task - SensorCollector \n");
 	while(1)
 	{
 		i=0;
-		while ( (msgQNumMsgs(mesgQueueIdSensorCollector)>0) && i<26)
+		while ( (msgQNumMsgs(mesgQueueIdSensorCollector)>0) && i<26)		// Abzählen der 26 Sensoren
 		{
 			i++;
 			if(msgQReceive(mesgQueueIdSensorCollector, &ValueToBus.charvalue, 1, WAIT_FOREVER) == ERROR)
 				printf("msgQReceive in SensorCollector failed\n");
 			else
 			{
+				// Invertierte Logik für Busdaten
 				if (ValueToBus.result.value){
 					//printf("Sensor #%d ist 	++ aktiv ++\n",ValueToBus.result.id);
 					sensorBusData.l &= ~(1<<ValueToBus.result.id);
@@ -407,6 +395,7 @@ void Simulation_SensorCollector(void){
 			}
 		}
 		
+		// Senden in msgQ an HRL-Steuerung
 		if((msgQSend(mesgQueueIdSensorData, sensorBusData.smsg, sizeof(sensorBusData.smsg), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
 			if(!(msgQNumMsgs(mesgQueueIdSensorData) > 2)) 
 				printf("msgQSend in SensorCollector failed\n");		

@@ -7,6 +7,7 @@
  *      Author: Zauberer
  */
 
+// defines für Zustände für weniger Logik-Verwirrung
 #define DontCare (-1)
 #define Z_IO 2
 #define Z_Middle 1
@@ -16,6 +17,7 @@
 #define IO_GetBreak 1
 #define IO_GetFree 0
 
+// Speicherung virtueller Positionen
 int lastSensorX;
 int lastSensorY;
 int lastSensorZ;
@@ -23,6 +25,7 @@ int lastOutputState;
 int lastInputState;
 int lastCarryState;
 
+// Struktur für Kommandos
 typedef struct {
 	int x;
 	int y;
@@ -31,14 +34,14 @@ typedef struct {
 	int carry;
 	int allocation;
 } NextMovement;
-
 typedef union{
 	NextMovement move;
 	char charvalue[sizeof(NextMovement)];
 }NextMovementUNION;
 
-MSG_Q_ID mesgQueueIdNextMovement;
-MSG_Q_ID mesgQueueIdAktorDataPush;
+// msgQ Id's
+MSG_Q_ID mesgQueueIdNextMovement;		// Bewegungswarteschlange für einzelne Jobs
+MSG_Q_ID mesgQueueIdAktorDataPush;		// Aktordatenwarteschlange für asynchronen Push
 
 void HRL_Steuerung_AktorDataPush();
 void HRL_Steuerung_Movement();
@@ -47,6 +50,8 @@ void HRL_Steuerung_Movement_GetSensorBusData_ERROR(char* msg);
 void HRL_Steuerung_GetNewJob();
 NextMovement HRL_Steuerung_GetNewJob_DontCareState();
 void HRL_Steuerung_GetNewJob_Qsend();
+
+//-----------------------------------------------------------------------------------------
 
 int HRL_Steuerung_init(){
 	printf("Start: HRL-Steuerung \n");
