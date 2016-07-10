@@ -61,14 +61,14 @@ Sensorcollector greift Datensatz aus msgQueueIdSensorCollector ab(leeren der Que
 \end{figure}
 
 \underline{Mini-Spec Movement:}\\
-Der Movement-Task fragt kontinuierlich nach neuem Auftrag aus msgQueueCMD, ist keiner da wird Timeout ausgelöst und System geht in Pause-Modus bzw. Zusatzaufgabe über. Wenn Auftrag bereitsteht wird Belegung geändert(für Befehle vsetspace und clearspace) bzw. es werden die 8 Teilsensorbilder generiert(Befehle insert und remove). Diese werden in msgQueueNextMovement weitergeleitet und werden anschließend nacheinander abgearbeitet (aus der Queue). Für jeden Teilauftrag wird auf neue Sensordaten aus msgQueueSensor gewartet und die daraus entstehenden aktuellen Sensordaten mit den Soll-Sensordaten verglichen und die Aktoren per msgQueueAktorPush angesteuert. \\
+Der Movement-Task fragt kontinuierlich nach neuem Auftrag aus msgQueueCMD, ist keiner da wird Timeout ausgelöst und System geht in Pause-Modus bzw. Zusatzaufgabe über. Wenn Auftrag bereitsteht wird Belegung geändert(für Befehle vsetspace und clearspace) bzw. es werden die 8 Teilsensorbilder generiert(Befehle insert und remove). Diese werden in msgQueueNextMovement weitergeleitet und werden anschließend nacheinander abgearbeitet (aus der Queue). Für jeden Teilauftrag wird auf neue Sensordaten aus msgQueueSensor gewartet und die daraus entstehenden aktuellen Sensordaten mit den Soll-Sensordaten verglichen, dabei werden alle neuen Sensordaten auf ihre Legitimität überprüft und im Fehlerfall (z.B. blockierte Schiene) werden alle Motoren gestoppt und das System angehalten. Die Aktordoten werden in die msgQueueAktorPush geleitet. \\
 
 \underline{Mini-Spec AktorDataPush:}
 AktorDataPush dient zur Weitervermittlung der Aktordaten, welche geschützt weitergeleitet werden müssen(globale Variable).
 Wartet auf Aktordaten in msgQueueAktorPush, sind welche vorhanden wartet er auf die Semaphore um anschließend in die globale Variable zu schreiben aus welcher die Simulation liest. Für diese Semaphore wurde eine Prioritätsvererbung implementiert um den Schreibvorgang auf die globale Variable möglichst nicht aus zu bremsen. \\
 
 
-\subsection {funktionale Anforderungen}
+\subsection {Funktionale Anforderungen}
 
 \paragraph{Beweger}
 Wie in Abb.\ref{gantt} zu sehen ist läuft der \textbf{Beweger} als erster Task eines Simulationsschrittes. Zuerst aktualisiert er die Aktorwerte aus der gloablen Variable \textbf{AktorBusData}. Diese entspricht den Busdaten und ist durch eine Semaphore geschützt. Da die Simulation minimal blockiert werden soll implementiert die Semaphore eine Prioritätsvererbung. Daraufhin \glqq verschiebt\grqq   er den virtuellen Turm entsprechend der Aktordaten.
