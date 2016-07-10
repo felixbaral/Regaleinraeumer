@@ -2,4 +2,12 @@ was noch zu ändern wäre:
 
 - Überschrift: "ding" muss defintiv weg - bitte einen normalen Namen
 
-- 
+- 4.1.1 die Markierung "2." im Bild ist nicht beschriftet und im Text dazu nichts zu finden
+notfalls den Zyklus mit Beginn bei 1 und ende bei 2 beschreiben
+
+es fehlt noch der Hinweis zu dem Fehlers zu einer Eingabe ohne Zahlen 
+
+z.B.
+remove
+remove 1 1
+			führt zu einem remove bei 0 0
