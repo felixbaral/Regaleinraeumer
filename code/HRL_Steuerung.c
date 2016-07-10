@@ -94,9 +94,11 @@ int HRL_Steuerung_init(){
 void HRL_Steuerung_AktorDataPush(){
 	abusdata transmit;
 	while (1){
+		// warten auf neue Daten aus msgQ (Selbstblockade)
 		if(msgQReceive(mesgQueueIdAktorDataPush, transmit.amsg, sizeof(transmit.amsg), WAIT_FOREVER) == ERROR) 
 			printf("msgQReceive in HRL_Steuerung_AktorDataPush failed\n");
 		else{
+			// warten auf Semaphore (Prioritätsvererbung mit Simulation)
 			semTake(semBinary_SteuerungToSimulation, WAIT_FOREVER); 
 			SteuerungToSimulation = transmit;
 			semGive(semBinary_SteuerungToSimulation);
@@ -135,15 +137,15 @@ void HRL_Steuerung_Movement(){
 				}
 				
 				//  X
-				if ( (lastSensorX != nextmove.move.x) && (nextmove.move.x != DontCare) ){ 		// Stimmt der X-Wert noch nicht und soll er auch
+				if ( (lastSensorX != nextmove.move.x) && (nextmove.move.x != DontCare) ){ 		// Stimmt der X-Wert noch nicht und soll er auch verändert werden?
 					waitForSensor = true;
 					
-					if ( ((lastSensorX-nextmove.move.x)*(lastSensorX-nextmove.move.x)) >= 4)	
+					if ( ((lastSensorX-nextmove.move.x)*(lastSensorX-nextmove.move.x)) >= 4)	// mehr Speed für größere Entfernungen
 						aktorData.abits.axs = 1;
 					else
 						aktorData.abits.axs = 0;
 					
-					if (lastSensorX < nextmove.move.x){
+					if (lastSensorX < nextmove.move.x){ // Richtung festlegen
 						aktorData.abits.axr = 1;
 						aktorData.abits.axl = 0;
 					}
@@ -155,7 +157,7 @@ void HRL_Steuerung_Movement(){
 				}
 				
 				//  Y
-				if ( (lastSensorY != nextmove.move.y) && (nextmove.move.y != DontCare) ){
+				if ( (lastSensorY != nextmove.move.y) && (nextmove.move.y != DontCare) ){ 
 					waitForSensor = true;
 					if (lastSensorY < nextmove.move.y){
 						aktorData.abits.ayu = 1;
@@ -183,9 +185,9 @@ void HRL_Steuerung_Movement(){
 				
 				//  Licht
 				// Lichtschranke
-				if (nextmove.move.IO != DontCare){
+				if (nextmove.move.IO != DontCare){ // falls die Ein- und Ausgebe-Slots nicht egal sind
 					if ( (lastSensorX == PositionXinput) ){ //wir sind beim Input
-						if( (nextmove.move.IO == IO_GetBreak)  && (lastInputState != IO_GetBreak) ){
+						if( (nextmove.move.IO == IO_GetBreak)  && (lastInputState != IO_GetBreak) ){ //Lichtschranke beim Eingabe-Slot soll unterbrochen werden 
 							aktorData.abits.aealre=1;
 							aktorData.abits.aealra=0;
 							//printf("Input-Slot soll voll werden \n");
@@ -193,9 +195,7 @@ void HRL_Steuerung_Movement(){
 						}
 					}
 					else if ( (lastSensorX == PositionXoutput) ){ //wir sind beim Output
-						//printf("lastOutputState: %d \n", lastOutputState);
-						//printf("nextMoveIO: %d \n", nextmove.move.IO);
-						if( (nextmove.move.IO == IO_GetFree) && (lastOutputState !=  IO_GetFree) ) {
+						if( (nextmove.move.IO == IO_GetFree) && (lastOutputState !=  IO_GetFree) ) { // Lichtschranke soll frei werden (Ausgang)
 							aktorData.abits.aearra=1;
 							aktorData.abits.aearre=0;
 							//printf("Output-Slot soll leer werden \n");
@@ -206,20 +206,19 @@ void HRL_Steuerung_Movement(){
 				
 				
 				// Licht-Taster
-				if ( (lastCarryState != nextmove.move.carry) && (nextmove.move.carry != DontCare) ){
-					if ( (nextmove.move.carry == Carry_Get) && (!waitForSensor) ) {
+				if ( (lastCarryState != nextmove.move.carry) && (nextmove.move.carry != DontCare) ){ // soll nicht ignoriert werden und ist noch nicht korrekt
+					if ( (nextmove.move.carry == Carry_Get) && (!waitForSensor) ) { // soll Päckchen bekommen
 						aktorData.abits.ayu = 0;
-						aktorData.abits.ayo = 1;
+						aktorData.abits.ayo = 1; // weiter nach oben
 					}
-					if ( (nextmove.move.carry == Carry_Give) && (!waitForSensor) ) {
-						aktorData.abits.ayu = 1;
+					if ( (nextmove.move.carry == Carry_Give) && (!waitForSensor) ) { // soll Päckchen los werden
+						aktorData.abits.ayu = 1; // weiter nach unten
 						aktorData.abits.ayo = 0;
 					}
 					waitForSensor = true;
 				}
 				
-				
-								//sende noch Daten
+				// Aktor-Daten über msgQ an AktorDataPush übertragen
 				if((msgQSend(mesgQueueIdAktorDataPush, aktorData.amsg, sizeof(aktorData.amsg), WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 					printf("msgQSend to AktorDataPush failed\n");			
 			}//end waitForSensor
@@ -229,26 +228,28 @@ void HRL_Steuerung_Movement(){
 
 
 void HRL_Steuerung_Movement_GetSensorBusData(){
-	sbusdata returnvalue;
-	UIdataUnion visu;
-	static unsigned long int oldData;
-	int i, errorcount;
+	sbusdata returnvalue; 				// neueste Sensor-Daten aus der msgQ
+	UIdataUnion visu;					// struct der Daten, die an die Visualisierung geschickt werden
+	static unsigned long int oldData;	// Vergleichswert für alte Daten
+	int i, errorcount;					// Zählvariablen
+
+	// warten auf neue Sensor-Daten (Selbstblockade)
 	if(msgQReceive(mesgQueueIdSensorData, returnvalue.smsg, sizeof(returnvalue.smsg), WAIT_FOREVER) == ERROR){ 
 		printf("msgQReceive in HRL_Steuerung_Movement_GetSensorBusData failed\n");
-		returnvalue.l = 0;
+		returnvalue.l = 0; // reset im Fehlerfall
 	}
 	else{
 		// X-Achse
-		errorcount= (-1);
-		for (i = 0; i < 10; i++) {
+		errorcount= (-1); // reset der Fehlerzählers, es sollte maximal ein Sensor ausgelöst werden 
+		for (i = 0; i < 10; i++) { // alle X-Sensoren durchprüfen
 			if ( (returnvalue.l & (1<<(i+10)) ) == 0)
 			{
 				lastSensorX = i;
-				errorcount++;
+				errorcount++; // ausgelöste Sensoren mitzählen 
 				//printf("X sensor ausgelöst: %d %d\n", i,errorcount);
 			}
 		}
-		if (errorcount>0){
+		if (errorcount>0){ // mehr als ein Sensor ausgelöst?
 			HRL_Steuerung_Movement_GetSensorBusData_ERROR("mehrere X-Sensoren ausgelöst");
 		}
 		
@@ -288,7 +289,8 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 		}
 		
 		//licht
-		if (!returnvalue.sbits.lL){
+		// Die binäre Logik wird wieder umgekehrt und abgepeichert
+		if (!returnvalue.sbits.lL){ 
 			lastInputState = 1;
 		}
 		else 
@@ -307,10 +309,10 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 			lastCarryState = 0;
 				
 		
-		if (returnvalue.l != oldData ){ //Flimmer Reduzierung
+		if (returnvalue.l != oldData ){ //Flimmer Reduzierung: nur bei neuen Daten wird auch ein neues Bild gezeichnet
 			oldData = returnvalue.l;
 		
-			// Daten an Visualisierung senden
+			// Daten an Visualisierung senden - kopieren aller relevanten Daten
 			visu.data.towerX=lastSensorX;
 			visu.data.towerY=lastSensorY;
 			visu.data.towerZ=lastSensorZ;
@@ -319,55 +321,61 @@ void HRL_Steuerung_Movement_GetSensorBusData(){
 			visu.data.output = lastOutputState;
 			memcpy(visu.data.matrix, belegungsMatrix, sizeof(belegungsMatrix));
 			
+			// schickt neuste Daten in die msgQ für die Visualisierung - warten ist keine Option
 			if((msgQSend(msgQvisualisierung, visu.charvalue, sizeof(visu.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
 				printf("msgQSend Visualisierung übertragen: übersprungen\n");			
 		}
 	}
 }
 
+/*
+ * Im Störungsfall, das mehrere Sensoren (z.B. zwei Sensoren der X-Achse) auslösen, soll das System abbrechen 
+ * und unverzüglich die Motoren stoppen. Dies soll Schaden an der Hardware vermeiden.
+ */
 void HRL_Steuerung_Movement_GetSensorBusData_ERROR(char* msg){
 	printf("Sensoric ERROR: %s \nSystem Stop\n", msg);
 	abusdata transmit;
-	transmit.i=0;
-	msgQReceive(mesgQueueIdAktorDataPush, transmit.amsg, sizeof(transmit.amsg), WAIT_FOREVER);
-	taskDelete(taskIdSelf());
+	transmit.i=0; // alle Motoren aus
+	msgQSend(mesgQueueIdAktorDataPush, transmit.amsg, sizeof(transmit.amsg), WAIT_FOREVER, MSG_PRI_NORMAL); // neue Aktordaten senden
+	taskDelete(taskIdSelf()); // sich selbst beenden
 }
 
 void HRL_Steuerung_GetNewJob()
 {
-	UIdataUnion visu;
-	NextMovement next3D;
-	cmdQdata cmdData;
-	static int integrityCheckCounter;
-	static int pause;
-	int timeout[2] = {350, WAIT_FOREVER};
-	int i,j;
-	bool foundFreeSpace;
+	UIdataUnion visu;						// Daten für Visualisierung
+	NextMovement next3D;					// nächstes Soll-Sensor-Abbild
+	cmdQdata cmdData;						// nächster User-Befehl
+	static int integrityCheckCounter;		// bereits bewilligte Aufträge doppelt prüfen, nach einem highprio-Command
+	static int pause;						// pausen-Switch
+	int timeout[2] = {350, WAIT_FOREVER};	// pausen-Zeiten
+	int i,j;								// Zählvariablen
+	
 	//printf("Go and get a new Job, Bitch!\n");
 	if(msgQReceive(mesgQueueIdCmd, cmdData.charvalue, sizeof(cmdData.charvalue), timeout[pause]) == ERROR) {//etwa 5 Sekunden Timeout
-		if( msgQNumMsgs(mesgQueueIdCmd) == 0){
+		if( msgQNumMsgs(mesgQueueIdCmd) == 0){ // kein andere Fehler als leere msgQ
 			//printf("Searching Job! %d\n", zusatz);
-			if (!zusatz){
+			if (!zusatz){ //normale Pause
 				pause = 1;
-				// Pause-Modus einleiten - Timeout
-				pause = true;
+				// an X,Y-Position des Eingabeslots fahren
 				next3D = HRL_Steuerung_GetNewJob_DontCareState();
-				next3D.x = PositionXinput;
+				next3D.x = PositionXinput;	
 				next3D.y = PositionYinput+1;
 				HRL_Steuerung_GetNewJob_Qsend(next3D);
 			}
 			else{
+				// neuen Insert auf freie Stelle vorbereiten
 				cmdData.bits.highprio=0;
 				cmdData.bits.cmd=1;
 				for (j=0; j<(towerHeight); j++){
 					for (i=0; i<towerWidth; i++){
-						if (!belegungsMatrix[i][j]){
+						if (!belegungsMatrix[i][j]){ // freien Platz im gesamtem Regal suchen
 							cmdData.bits.x=i;
 							cmdData.bits.y=j;
+							// diesen Auftrag in msgQ einfügen
 							if((msgQSend(mesgQueueIdCmd,cmdData.charvalue,  sizeof(cmdData.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
 								printf("msgQSend Zusatztask funktioniert nicht\n");	
-							printf("foudn zusatzjob\n");
-							return;
+							//printf("found zusatzjob\n");
+							return; //großer break
 						}
 					}
 				}
@@ -376,14 +384,15 @@ void HRL_Steuerung_GetNewJob()
 	}
 	else{
 		pause = 0;
-		integrityCheckCounter--;
-		if (integrityCheckCounter < -5){ //Überlauf verhindern
+		integrityCheckCounter--; 			// noch zu Überprüfende Elemente verringern
+		if (integrityCheckCounter < -5){ 	// Überlauf verhindern
 			integrityCheckCounter = -1;
 		}
-		if (cmdData.bits.highprio){
+		if (cmdData.bits.highprio){			// "vsetspace" & "clearspace" nur kurz digital abarbeiten
 			integrityCheckCounter = msgQNumMsgs(mesgQueueIdCmd);
 			belegungsMatrix[cmdData.bits.x][cmdData.bits.y] = cmdData.bits.cmd;
 			
+			// die neue Belegung auch Visualisieren
 			visu.data.towerX=lastSensorX;
 			visu.data.towerY=lastSensorY;
 			visu.data.towerZ=lastSensorZ;
@@ -397,7 +406,7 @@ void HRL_Steuerung_GetNewJob()
 			
 		}else if (cmdData.bits.cmd){//insert xy
 			//printf("insert Job erkannt");
-			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.y] == true) ){
+			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.y] == true) ){ // falls Prüfung notwendig, diese nochmals durchführen
 				printf("ungueltiger insert-Befehl entfernt\n");
 			}
 			else{
@@ -449,7 +458,7 @@ void HRL_Steuerung_GetNewJob()
 			}
 		}else{//remove xy
 			//printf("remove Job erkannt");
-			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.y] == false) ){
+			if ( (integrityCheckCounter >= 0) && (belegungsMatrix[cmdData.bits.x][cmdData.bits.y] == false) ){ // falls  Prüfung notwendig, diese nochmals durchführen
 				printf("ungueltiger output-Befehl entfernt\n");
 			}
 			else{
@@ -504,7 +513,7 @@ void HRL_Steuerung_GetNewJob()
 }
 
 NextMovement HRL_Steuerung_GetNewJob_DontCareState(){
-	NextMovement returnValue; // 0=stop für den Motor; 0<sensorwert-1
+	NextMovement returnValue; 
 	returnValue.carry = DontCare;
 	returnValue.IO= DontCare;
 	returnValue.x=  DontCare;
@@ -512,13 +521,15 @@ NextMovement HRL_Steuerung_GetNewJob_DontCareState(){
 	returnValue.z=  DontCare;
 	returnValue.allocation = DontCare;
 
+
+	// alles auf DontCare-Status
 	return returnValue;
 }
 
 void HRL_Steuerung_GetNewJob_Qsend(NextMovement move){
 	NextMovementUNION transmit;
 	transmit.move = move;
-	//printf
+	// nächsten Move in die msgQ setzten
 	if((msgQSend(mesgQueueIdNextMovement, transmit.charvalue, sizeof(transmit.charvalue), WAIT_FOREVER, MSG_PRI_NORMAL)) == ERROR)
 		printf("msgQSend in HRL_Steuerung_GetNewJob failed\n");		
 }

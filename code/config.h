@@ -5,7 +5,7 @@
  * für die Zusatzaufgabe bitte den define 
  * auf 1 (an) oder 0 (aus) setzen
  */
-#define zusatz 1
+#define zusatz 0
 
 
 //grundlegende Dimension des HRL
@@ -31,7 +31,7 @@
 
 
 //Task-Frequency
-#define Delay_Time_Simulation 10
+#define Delay_Time_Simulation 20
 
 // EA-Slots (Eingabe links)
 #define PositionXinput 1
@@ -44,7 +44,7 @@
 #define SensorDistanceX 10 
 #define sensorDistanceY 5
 #define sensorDistanceZ 10
-#define Delay_Time_IO_Slots 5
+#define Delay_Time_IO_Slots 8
 
 //------------------------------------------------
 
