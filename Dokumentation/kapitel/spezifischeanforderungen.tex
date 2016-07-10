@@ -62,9 +62,8 @@ if(Z = aus Regal heraus und Y= runter)\\
 Auslagerungsvorgang in Ausgabe-Slot erkannt -> Lichttaster anschließend nicht bedeckt  Zeitkonstante von Lichtschrank in Slot wird zurückgesetzt\ \\
 \\
 \\
-<<<<<<< Updated upstream
 \underline{Mini-Spec Sensorcollector:}\\
-Sensorcollector greift Datensatz aus msgQueueIdSensorCollector ab(leeren der Queue), fügt sie zu sbusdata zusammen und gibt diese in msgQueueIdSensorData\\ 
+Der Sensorcollector läuft nach allen Sensoren. Er  greift die Messwerte der einzelnen Sensoren aus \textit{msgQueueIdSensorCollector} ab (leeren der Queue) und fügt sie zu \textit{sbusdata} zusammen und schiebt diese in \textit{msgQueueIdSensorData}.\\ 
 
 
 \subsubsection{DFD1 Steuerung}
@@ -81,60 +80,6 @@ Der Movement-Task fragt kontinuierlich nach neuem Auftrag aus msgQueueCMD, ist k
 \underline{Mini-Spec AktorDataPush:}
 AktorDataPush dient zur Weitervermittlung der Aktordaten, welche geschützt weitergeleitet werden müssen(globale Variable).
 Wartet auf Aktordaten in msgQueueAktorPush, sind welche vorhanden wartet er auf die Semaphore um anschließend in die globale Variable zu schreiben aus welcher die Simulation liest. Für diese Semaphore wurde eine Prioritätsvererbung implementiert um den Schreibvorgang auf die globale Variable möglichst nicht aus zu bremsen. \\
-
-
-\subsection {Funktionale Anforderungen}
-
-\paragraph{Beweger}
-Wie in Abb.\ref{gantt} zu sehen ist läuft der \textbf{Beweger} als erster Task eines Simulationsschrittes. Zuerst aktualisiert er die Aktorwerte aus der gloablen Variable \textbf{AktorBusData}. Diese entspricht den Busdaten und ist durch eine Semaphore geschützt. Da die Simulation minimal blockiert werden soll implementiert die Semaphore eine Prioritätsvererbung. Daraufhin \glqq verschiebt\grqq   er den virtuellen Turm entsprechend der Aktordaten.
-
-\paragraph{Sensorcollector}
-Der \textbf{Sensorcollector} läuft nach allen Sensoren und sammelt  aus einer Message Queue die Einträge aller Sensoren. Wenn ein Sensor ausfällt bleibt der Wert des Sensors auf 1. Daraufhin schiebt er alle Sensorwerte, in einem Vektor, in eine Messega Queue auf die die Steuerung Zugriff hat.
-
-\paragraph{Simulation Sensor x}
-Jeder Sensor bekommt eine id übergeben die seine Funktion und ihn eindeutig definiert. 
-\begin{enumerate} 
-\item \textbf{Tastsensoren} überprüfen ob die Turmposition mit der Sensorposition übereinstimmt.
-\item \textbf{Lichtschranken} Simulieren entweder das eintreffen eines Klötzchens am Eingabeslot oder das Entfernen eines Klötzchens am Ausgabeslot, jeweils mit einem vordefinierten Delay.
-\item Der \textbf{Lichttaster} im Turm wird dann ausgelöst wenn die vorige y-Position des Turms im vorigen Schritt über (beim Ablegen eines Klötzchens) bzw. unter (beim Aufnehmen) der jetzigen Position ist und (beim Ablegen) ein Klötzchen im Turm ist bzw. (beim Aufnehmen) ein Klötzchen an der Aufnahmeposition ist.
-\end{enumerate}
-Die jeweiligen Sensordaten schiebt der Task daraufhin in eine Message Queue für den Sensorcollector.
-
-\begin{figure}[H]
-	\centering
-  \includegraphics[width=\textwidth]{diagrams/gand.png}
-	\caption{Gantt Diagramm der Task der Simulation}
-	\label{gantt}
-\end{figure}
-
-Alle Tasks in der Simulation haben eine Priorität von 200 und ändern diese nicht. Sie werden in einer festen Reihenfolge erzeugt und laufen dann in jedem Zyklus in dieser Sequenz.
-
-
-\begin{table}[H]
-\centering
-\begin{tabular}{|l|r|}
-\hline
-Taster X[0-9] &  [gedrückt|gehalten] \\
-\hline
-Taster Y[0-9] &  [gedrückt|gehalten] \\
-\hline
-Taster Z[0-3] &  [gedrückt|gehalten] \\
-\hline
-Lichtschranke Eingabe & [unterbrochen|nicht unterbrochen] \\
-\hline
-Lichtschranke Ausgabe & [unterbrochen|nicht unterbrochen] \\
-\hline
-Turmlichtschalter & [bedeckt|nicht bedeckt]\\
-\hline
-\end{tabular}
-\caption{Requirements Dictionary: Die Stati der Sensoren}
-\label{tab:Requirements Dictionary}
-\end{table}
-
-
-\underline{Mini-Spec Sensorcollector:}\\
-Der Sensorcollector läuft nach allen Sensoren. Er  greift die Messwerte der einzelnen Sensoren aus \textit{msgQueueIdSensorCollector} ab (leeren der Queue) und fügt sie zu \textit{sbusdata} zusammen und schiebt diese in \textit{msgQueueIdSensorData}.\\ 
-
 
 \subsubsection{DFD1 Steuerung}
 \begin{figure}[H]
