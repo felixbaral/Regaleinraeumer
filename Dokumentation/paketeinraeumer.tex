@@ -38,23 +38,38 @@
 \setlength{\parindent}{0pt}
     
 \begin{document}
+\begin{titlepage}
+	\centering
+	\includegraphics[width=0.15\textwidth]{diagrams/console_output.JPG}\par\vspace{1cm}
+	{\scshape\LARGE Ernst Abbe Hochschule Jena\par}
+	\vspace{1cm}
+	{\scshape\Large Abschussprojekt \\ Echtzeitbetriebssysteme\par}
+	\vspace{1.5cm}
+	{\huge\bfseries Hochregallager\par}
+	\vspace{2cm}
+	{\Large\itshape Michael Thomas, Andreas Glatz,\\ Simon Weitzel, Felix Baral -Weber \par}
+	\vfill
+	betreut durch\par
+	Herr  Prof. Dr.-Ing. ~Oliver \textsc{Jack}
 
-\begin{normalsize}
+	\vfill
 
-\raggedright\textbf{\Huge Regaleinräumer "Hochstapler"}\\	
-		\begin{flushright}
-		\textit{Michael Thomas},
-		\textit{Andreas Glatz},
-		\textit{Simon Weitzel},
-		\textit{Felix Baral-Weber}\\
-		Stand: \space \today \space \thistime
-		\end{flushright}
+% Bottom of the page
+	{\large \today\par}
+\end{titlepage}
 
-\end{normalsize}
+\newpage % Seite 4 links und ...
+\thispagestyle{empty} % ... leer
+\newpage % Seite 4 links und ...
+
 \tableofcontents
+\pagebreak
 \input{kapitel/einfuehrung}
+\pagebreak
 \input{kapitel/allgemeinebeschreibung}
+\pagebreak
 \input{kapitel/spezifischeanforderungen}
+\pagebreak
 \input{kapitel/tests}
 %\input{lectures/lecture12}
 \end{document}
