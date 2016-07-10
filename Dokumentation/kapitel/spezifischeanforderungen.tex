@@ -41,12 +41,11 @@ if(virtuelle Position-X == triggeroffset-X) true und eigene ID in \textit{msgQue
 else false und eigene ID in \textit{msgQueueIdSensorCollector\\} \\
 analog für Y- und Z-Sensoren\\ \\
 
-\underline{Mini-Spec Simulation Sensor 23:}\\
-Der Lichttaster wird gesetzt wenn er eine Auflade- bzw. Abladeoperation detektiert. Diese besteht (wie in Abb. \ref{fig3} zu sehen) aus unter den Ablagepunkt fahren, den Arm nach außen bzw. innen fahren und dann anheben, bzw. über den Ausgabepunkt fahren, den Arm nach außen bzw innen fahren und danach absenken.\\ \\
+\underline{Mini-Spec Simulation Sensor 23-24:}\\
+Sensoren für Lichtschranken. Berechnung nicht über \textit{triggeroffset}, sondern die Lichtschranken werden über Zeitkonstanten gesteuert, welche hoch bzw. runter gezählt werden.\\
 
-\underline{Mini-Spec Simulation Sensor 24-25:}\\
-Sensoren für Lichtschranken.
-Berechnung nicht über \textit{triggeroffset}, sondern die Lichtschranken werden über Zeitkonstanten gesteuert, welche hoch bzw. runter gezählt werden.\\
+\underline{Mini-Spec Simulation Sensor 25:}\\
+Der Lichttaster wird gesetzt wenn er eine Auflade- bzw. Abladeoperation detektiert. Diese besteht (wie in Abb. \ref{fig3} zu sehen) aus unter den Ablagepunkt fahren, den Arm nach außen bzw. innen fahren und dann anheben, bzw. über den Ausgabepunkt fahren, den Arm nach außen bzw innen fahren und danach absenken.\\ \\
 Setzen bzw. Entfernen eines Klötzchens aus bzw. in einen Lichttaster:\\ \\
 if(Z = in Regal und Y= hoch) \\
 Auslagerungsvorgang in Regal erkannt -> Lichttaster anschließend bedeckt und Belegungsmatrix[X][Y]= nicht belegt\\
