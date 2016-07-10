@@ -1,7 +1,7 @@
 \section{Tests}
 \subsection{Zeitliche Analyse}
 \subsubsection{Test Simulation mit System Viewer}
-In Abb: \ref{fig4} wird eine Sequenz der Simulation dargestellt, während sich das Programm in einer Pause befindet und keine Aufträge ausgeführt werden. Diese Sequenz beginnt mit dem Beweger-Task (1.) welcher die virtuelle Position des Turms aktualisiert. Anschließend werden alle Sensor-Tasks nacheinander aktiv und überprüfen, ob sich an ihrer Stelle gerade der Turm befindet und schreiben ihre Antwort daraufhin in die MessageQueue. Diese wird von dem Sensor-Collector, nachdem alle Sensoren durchgelaufen sind, ausgelesen und von diesem zu einem Gesamt-Konstrukt zusammengefügt und in die MessageQueue an die HRL-Steuerung geschrieben. \\
+In Abb: \ref{fig4} wird eine Sequenz der Simulation dargestellt, während das Programm neue Aktordaten verarbeitet. Diese Sequenz beginnt mit dem Beweger-Task (1.) welcher die virtuelle Position des Turms aktualisiert. Anschließend werden alle Sensor-Tasks nacheinander aktiv und überprüfen, ob sich an ihrer Stelle gerade der Turm befindet und schreiben ihre Antwort daraufhin in die MessageQueue. Diese wird von dem Sensor-Collector, nachdem alle Sensoren durchgelaufen sind, ausgelesen und von diesem zu einem Gesamt-Konstrukt zusammengefügt und in die MessageQueue an die HRL-Steuerung geschrieben. \\
 Das Gantt-Diagramm  Abb: \ref{gantt} wird damit bestätigt.
 
 \begin{figure}[H]
@@ -36,6 +36,7 @@ remove	x y & pass & pass & pass & pass\\
 \end{tabular}
 \ \\
 Nach diesem Test können wir bestätigen, dass das Programm aus jedem Job in den Folgejob gelangt.
+\newline
 
 \subsubsection {Vollständigkeit / Korrektheit} 
 
@@ -48,6 +49,7 @@ vsetspace & pass\\
 \end{tabular}
 
 Dieser Test bestätigt die Funktion des vsetspace-Befehls innerhalb der Spezifikationen.
+\newline
 
 \begin{tabular}{|l|l|}
 \hline
@@ -58,6 +60,7 @@ clearspace & pass\\
 \end{tabular}
 
 Dieser Test bestätigt die Funktion des clearspace-Befehls innerhalb der Spezifikationen.
+\newline
 
 
 \begin{tabular}{|l|l|l|l|l|}
@@ -69,6 +72,7 @@ insert x y & pass & pass & pass & pass\\
 \end{tabular}
 
 Dieser Test bestätigt die Funktion des insert-Befehls innerhalb der Spezifikationen.
+\newline
 
 \begin{tabular}{|l|l|l|l|l|}
 \hline

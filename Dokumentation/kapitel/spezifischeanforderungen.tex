@@ -24,7 +24,7 @@ Aus dem Kontextdiagramm lässt sich leicht erkennen, dass das System aus zwei gr
 	\label{gantt}
 \end{figure}
 
-Alle Tasks in der Simulation haben eine Priorität von 200 und ändern diese nicht. Sie werden in einer festen Reihenfolge erzeugt und laufen dann in jedem Zyklus in dieser Sequenz.\\
+Alle Tasks in der Simulation haben die gleiche Priorität und ändern diese nicht. Sie werden in einer festen Reihenfolge erzeugt und laufen dann in jedem Zyklus in dieser Sequenz.\\
 \\
 
 \underline{Mini-Spec Simulation Beweger:}\\
@@ -37,7 +37,7 @@ Jeder Sensor bekommt eine ID die der Bitstelle in Sensorbits entspricht. Zur Ini
 
 \underline{Mini-Spec Simulation Sensor 0-22:}\\
 Der Sensor Task berechnet das eigene \textit{triggeroffset} und gleicht dieses mit der virtuellen Position ab.\\
-if(virtuelle Position-X == triggeroffset-X) true und eigene ID in \textit{msgQueueIdSensorCollector\\}
+if(virtuelle Position-X == Sensorposition-X) true und eigene ID in \textit{msgQueueIdSensorCollector\\}
 else false und eigene ID in \textit{msgQueueIdSensorCollector\\} \\
 analog für Y- und Z-Sensoren\\ \\
 
@@ -47,22 +47,22 @@ Bei Sensoren für Lichtschranken wird die Berechnung nicht über ein \textit{tri
 \underline{Mini-Spec Simulation Sensor 25:}\\
 Der Lichttaster wird gesetzt wenn er eine Auflade- bzw. Abladeoperation detektiert. Diese besteht (wie in Abb. \ref{fig3} zu sehen) aus unter den Ablagepunkt fahren, den Arm nach außen bzw. innen fahren und dann anheben, bzw. über den Ausgabepunkt fahren, den Arm nach außen bzw innen fahren und danach absenken.\\ \\
 Setzen bzw. Entfernen eines Klötzchens aus bzw. in einen Lichttaster:\\ \\
-if(Z = in Regal und Y= hoch) \\
+if(Z = in Regal und anschließend Y= hoch) \\
 Auslagerungsvorgang in Regal erkannt -> Lichttaster anschließend bedeckt und Belegungsmatrix[X][Y]= nicht belegt\\
 \\
-if(Z = in Regal und Y= runter)\\
+if(Z = in Regal und anschließend Y= runter)\\
 Einlagerungsvorgang in Regal erkannt -> Lichttaster anschließend nicht bedeckt und Belegungsmatrix[X][Y] = belegt \\
 \\
 \\
-if(Z = aus Regal heraus und Y= hoch)\\
+if(Z = aus Regal heraus und anschließend Y= hoch)\\
 Aufnahmevorgang in Eingabe-Slot erkannt -> Lichttaster anschließend bedeckt und Zeitkonstante von Lichtschranke in Slot wird zurückgesetzt\\
 \\
-if(Z = aus Regal heraus und Y= runter)\\
+if(Z = aus Regal heraus und anschließend Y= runter)\\
 Auslagerungsvorgang in Ausgabe-Slot erkannt -> Lichttaster anschließend nicht bedeckt  Zeitkonstante von Lichtschranke in Slot wird zurückgesetzt\ \\
 \\
 \\
 \underline{Mini-Spec Sensorcollector:}\\
-Der Sensorcollector läuft nach allen Sensoren. Er  greift die Messwerte der einzelnen Sensoren aus \textit{msgQueueIdSensorCollector} ab (leeren der Queue) und fügt sie zu \textit{sbusdata} zusammen und schiebt diese in \textit{msgQueueIdSensorData}.\\ 
+Der Sensorcollector läuft nach allen Sensoren. Er  greift die Messwerte der einzelnen Sensoren aus \textit{msgQueueIdSensorCollector} ab (leeren der Queue) und fügt sie zu \textit{sbusdata} zusammen und schiebt diese anschließend in \textit{msgQueueIdSensorData}.\\ 
 
 
 \subsubsection{DFD1 Steuerung}
@@ -74,8 +74,7 @@ Der Sensorcollector läuft nach allen Sensoren. Er  greift die Messwerte der ein
 \end{figure}
 
 \underline{Mini-Spec Movement:}\\
-Der Movement-Task fragt kontinuierlich nach einem neuem Auftrag aus der \textit{msgQueueCMD}, ist keiner da wird ein Timeout ausgelöst und das System geht in den Pause-Modus bzw. Zusatzaufgabe über. Wenn der Auftrag bereitsteht wird die Belegung geändert(für Befehle vsetspace und clearspace) bzw. es werden die acht Teilsensorbilder generiert(Befehle insert und remove). Diese werden in die \textit{msgQueueNextMovement} weitergeleitet und anschließend nacheinander aus der Queue abgearbeitet. Für jeden Teilauftrag wird auf neue Sensordaten aus \textit{msgQueueSensor} gewartet und die daraus entstehenden aktuellen Sensordaten mit den Soll-Sensordaten verglichen, dabei werden alle neuen Sensordaten auf ihre Legitimität überprüft und im Fehlerfall (z.B. blockierte Schiene) werden alle Motoren gestoppt und das System angehalten. Die Aktordoten werden in die \textit{msgQueueAktorPush} geleitet. \\
+Der Movement-Task fragt kontinuierlich nach einem neuem Auftrag aus der \textit{msgQueueCMD}, ist keiner da wird ein Timeout ausgelöst und das System geht in den Pause-Modus bzw. Zusatzaufgabe über. Wenn der Auftrag bereitsteht wird die Belegung geändert(für Befehle vsetspace und clearspace) bzw. es werden die acht Teilsensorbilder generiert(Befehle insert und remove). Diese werden in die \textit{msgQueueNextMovement} weitergeleitet und anschließend nacheinander aus der Queue abgearbeitet. Für jeden Teilauftrag wird auf neue Sensordaten aus \textit{msgQueueSensor} gewartet und die daraus entstehenden aktuellen Sensordaten mit den Soll-Sensordaten verglichen, dabei werden alle neuen Sensordaten auf ihre Legitimität überprüft und im Fehlerfall (z.B. blockierte Schiene) werden alle Motoren gestoppt und das System angehalten. Die Aktordaten werden in die \textit{msgQueueAktorPush} geleitet. \\
 
 \underline{Mini-Spec AktorDataPush:}
-\textit{AktorDataPush} dient zur Weitervermittlung der Aktordaten, welche geschützt weitergeleitet werden müssen(globale Variable),
-wartet auf Aktordaten in der \textit{msgQueueAktorPush}. Sind Daten vorhanden wartet dieser auf die Semaphore, um anschließend in die globale Variable zu schreiben, aus welcher die Simulation liest. Für diese Semaphore wurde eine Prioritätsvererbung implementiert, um den Schreibvorgang auf die globale Variable möglichst nicht aus zu bremsen. \\
+\textit{AktorDataPush} dient zur Weitervermittlung der Aktordaten, welche geschützt weitergeleitet werden müssen(globale Variable) - wartet auf diese Aktordaten aus der \textit{msgQueueAktorPush}. Sind Daten vorhanden wartet diese Funktion auf die Semaphore, um anschließend in die globale Variable zu schreiben, aus welcher die Simulation liest. Für diese Semaphore wurde eine Prioritätsvererbung implementiert, um den Schreibvorgang auf die globale Variable möglichst nicht aus zu bremsen. \\
