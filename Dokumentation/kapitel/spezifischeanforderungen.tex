@@ -15,24 +15,38 @@ Aus dem Kontextdiagramm lässt sich leicht erkennen, dass das System aus zwei gr
 	\caption{DFD1 Simulation}
 	\label{fig2}
 \end{figure}
+
+
+\begin{figure}[H]
+	\centering
+  \includegraphics[width=\textwidth]{diagrams/gand.png}
+	\caption{Gantt Diagramm der Task der Simulation}
+	\label{gantt}
+\end{figure}
+
+Alle Tasks in der Simulation haben eine Priorität von 200 und ändern diese nicht. Sie werden in einer festen Reihenfolge erzeugt und laufen dann in jedem Zyklus in dieser Sequenz.\\
+\\
+
 \underline{Mini-Spec Simulation Beweger:}\\
-Beweger setzt virtuelle Position(Positionsdaten) nach Aktordaten(abusdata), welche durch Semaphore geschützt werden\\ \\
- if(x nach rechts) virtuelle Position-X ++\\
-else if(x nach links) virtuelle Position-X - -\\
-if(y nach oben) virtuelle Position-Y - -\\
-else if(y nach unten) virtuelle Position-Y ++\\
-if(z nach vorne) virtuelle Position-Z ++\\
-else if(z nach hinten) virtuelle Position-Z - -\\ \\
+Wie in Abb.\ref{gantt} zu sehen ist läuft der \textbf{Beweger} als erster Task eines Simulationsschrittes.
+Der Beweger setzt virtuelle Position(Positionsdaten) nach Aktordaten (abusdata), welche durch einen Semaphore geschützt werden.  Da die Simulation minimal blockiert werden soll implementiert die Semaphore eine Prioritätsvererbung.\\ \\
+
+
+\underline{Mini-Spec Simulation Sensor:}\\
+Jeder Sensor bekommt eine ID die der bitstelle in Sensorbits entspricht. Zur initialisierung errechnet er so seine Position (\textit{triggeroffset}).\\ \\
 
 \underline{Mini-Spec Simulation Sensor 0-22:}\\
-Sensor Task berechnet eigenes trifferoffset und gleicht dieses mit virtueller Position ab\\
-if(virtuelle Position-X == triggeroffset-X) true und eigene ID in msgQueueIdSensorCollector\\
-else false und eigene ID in msgQueueIdSensorCollector\\ \\
+Sensor Task berechnet eigenes \textit{triggeroffset} und gleicht dieses mit virtueller Position ab.\\
+if(virtuelle Position-X == triggeroffset-X) true und eigene ID in \textit{msgQueueIdSensorCollector\\}
+else false und eigene ID in \textit{msgQueueIdSensorCollector\\} \\
 analog für Y- und Z-Sensoren\\ \\
 
-\underline{Mini-Spec Simulation Sensor 23-25:}\\
-Sensoren für Lichttaster.
-Berechnung nicht über triggeroffset, sondern Lichtschranken werden über Zeitkonstanten gesteuert, welche hoch bzw. runter gezählt werden.\\
+\underline{Mini-Spec Simulation Sensor 23:}\\
+Der Lichttaster wird gesetzt wenn er eine Auflade- bzw. Abladeoperation detektiert. Diese besteht (wie in Abb. \ref{fig3} zu sehen) aus unter den Ablagepunkt fahren, den Arm nach außen bzw. innen fahren und dann anheben, bzw. über den Ausgabepunkt fahren, den Arm nach außen bzw innen fahren und danach absenken.\\ \\
+
+\underline{Mini-Spec Simulation Sensor 24-25:}\\
+Sensoren für Lichtschranken.
+Berechnung nicht über \textit{triggeroffset}, sondern die Lichtschranken werden über Zeitkonstanten gesteuert, welche hoch bzw. runter gezählt werden.\\
 Setzen bzw. Entfernen eines Klötzchens aus bzw. in einen Lichttaster:\\ \\
 if(Z = in Regal und Y= hoch) \\
 Auslagerungsvorgang in Regal erkannt -> Lichttaster anschließend bedeckt und Belegungsmatrix[X][Y]= nicht belegt\\
@@ -48,6 +62,7 @@ if(Z = aus Regal heraus und Y= runter)\\
 Auslagerungsvorgang in Ausgabe-Slot erkannt -> Lichttaster anschließend nicht bedeckt  Zeitkonstante von Lichtschrank in Slot wird zurückgesetzt\ \\
 \\
 \\
+<<<<<<< Updated upstream
 \underline{Mini-Spec Sensorcollector:}\\
 Sensorcollector greift Datensatz aus msgQueueIdSensorCollector ab(leeren der Queue), fügt sie zu sbusdata zusammen und gibt diese in msgQueueIdSensorData\\ 
 
@@ -95,6 +110,9 @@ Die jeweiligen Sensordaten schiebt der Task daraufhin in eine Message Queue für
 Alle Tasks in der Simulation haben eine Priorität von 200 und ändern diese nicht. Sie werden in einer festen Reihenfolge erzeugt und laufen dann in jedem Zyklus in dieser Sequenz.
 
 \begin{table}[h]
+=======
+\begin{table}[H]
+>>>>>>> Stashed changes
 \centering
 \begin{tabular}{|l|r|}
 \hline
@@ -114,3 +132,23 @@ Turmlichtschalter & [bedeckt|nicht bedeckt]\\
 \caption{Requirements Dictionary: Die Stati der Sensoren}
 \label{tab:Requirements Dictionary}
 \end{table}
+
+
+\underline{Mini-Spec Sensorcollector:}\\
+Der Sensorcollector läuft nach allen Sensoren. Er  greift die Messwerte der einzelnen Sensoren aus \textit{msgQueueIdSensorCollector} ab (leeren der Queue) und fügt sie zu \textit{sbusdata} zusammen und schiebt diese in \textit{msgQueueIdSensorData}.\\ 
+
+
+\subsubsection{DFD1 Steuerung}
+\begin{figure}[H]
+	\centering
+  \includegraphics[width=\textwidth]{DFD/dfd1_steuerung.png}
+	\caption{DFD1 Steuerung}
+	\label{fig3}
+\end{figure}
+
+\underline{Mini-Spec Movement:}\\
+Der Movement-Task fragt kontinuierlich nach neuem Auftrag aus msgQueueCMD, ist keiner da wird Timeout ausgelöst und System geht in Pause-Modus bzw. Zusatzaufgabe über. Wenn Auftrag bereitsteht wird Belegung geändert(für Befehle vsetspace und clearspace) bzw. es werden die 8 Teilsensorbilder generiert(Befehle insert und remove). Diese werden in msgQueueNextMovement weitergeleitet und werden anschließend nacheinander abgearbeitet (aus der Queue). Für jeden Teilauftrag wird auf neue Sensordaten aus msgQueueSensor gewartet und die daraus entstehenden aktuellen Sensordaten mit den Soll-Sensordaten verglichen und die Aktoren per msgQueueAktorPush angesteuert. \\
+
+\underline{Mini-Spec AktorDataPush:}\\
+AktorDataPush dient zur Weitervermittlung der Aktordaten, welche geschützt weitergeleitet werden müssen(globale Variable).
+Wartet auf Aktordaten in msgQueueAktorPush, sind welche vorhanden wartet er auf die Semaphore um anschließend in die globale Variable zu schreiben aus welcher die Simulation liest. Für diese Semaphore wurde eine Prioritätsvererbung implementiert um den Schreibvorgang auf die globale Variable möglichst nicht aus zu bremsen. \\
