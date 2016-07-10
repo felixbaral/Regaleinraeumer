@@ -18,3 +18,93 @@ Die Hochregal-Steuerung besteht aus lediglich zwei Tasks, welche sich nicht unte
 	\caption{HRL-Steuerung mit System Viewer}
 	\label{fig5}
 \end{figure}
+\subsection {Systemtests}
+
+\subsubsection {Jobannahmetest}
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+ aktuell | neu -->&  vsetspace x y & clearspace x y  & insert x y & remove x y\\
+\hline
+vsetspace	x y & pass & pass & pass  & pass\\
+\hline
+clearspace	x y & pass & pass & pass  & pass \\
+\hline
+insert 		x y & pass & pass & pass & pass\\
+\hline
+remove	x y & pass & pass & pass & pass\\
+\hline
+\end{tabular}
+
+Nach diesem Test können wir bestätigen, dass das Programm aus jedem Job in den Folgejob gelangt.
+
+\subsubsection {Vollständigkeit / Korrektheit} 
+
+\begin{tabular}{|l|l|}
+\hline
+         	& Änderung der Belegungsmatrix\\
+\hline
+vsetspace & pass\\
+\hline
+\end{tabular}
+
+Dieser Test bestätigt die Funktion des vsetspace-Befehls innerhalb der Spezifikationen.
+
+\begin{tabular}{|l|l|}
+\hline
+         	& Änderung der Belegungsmatrix\\
+\hline
+clearspace & pass\\
+\hline
+\end{tabular}
+
+Dieser Test bestätigt die Funktion des clearspace-Befehls innerhalb der Spezifikationen.
+
+
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+         	&  fahre zur Eingabe & Paket annehmen   & fahre zur Ablage & Paket ablegen\\
+\hline
+insert x y & pass & pass & pass & pass\\
+\hline
+\end{tabular}
+
+Dieser Test bestätigt die Funktion des insert-Befehls innerhalb der Spezifikationen.
+
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+         	&  fahre zur Ablage & Paket annehmen   & fahre zur Augabe & Paket ablegen\\
+\hline
+remove x y & pass & pass & pass & pass\\
+\hline
+\end{tabular}
+
+Dieser Test bestätigt die Funktion des remove-Befehls innerhalb der Spezifikationen.\\
+\\
+Zudem wurde das Verhalten der automatisches Einlagerung überprüft falls das Regal voll ist. In diesem fall wird der Job nicht mehr angenommen und der zustand am Terminal ausgegeben.\\
+\\
+Falls mehrere Befehle in der Warteschlange den selben Platz setzen oder leeren wollen wurde dies nicht erkannt, dieses fehlverhalten wurde verbessert  und am Terminal quittiert.
+
+
+\subsubsection {Test außerhalb der Spezifikationen}
+
+In diesem Test wird das verhalten des Programmes bei Fehlbedienung getestet, ein pass bedeutet das der Job nicht angenommen wird.
+
+\begin{tabular}{|l|l|l|l|l|}
+\hline
+         	&  x<0 | y<0 & x > 9 | y > 4 & ohne Param.& ende von Pause oder Zusatz\\
+\hline
+vsetspace & pass & pass & pass & pass \\
+\hline
+clearspace & pass & pass & pass & pass \\
+\hline
+insert & pass & pass & pass & pass \\
+\hline
+remove & pass & pass & pass & pass \\
+\hline
+\end{tabular}
+
+Dieser Test bestätigt das bei jeder fehlerhaften Eingabe der Job nicht angenommen wird und dieses auch am Terminal anzeigt.
+
+
+
+

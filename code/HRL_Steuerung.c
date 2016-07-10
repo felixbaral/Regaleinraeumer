@@ -55,21 +55,21 @@ void HRL_Steuerung_GetNewJob_Qsend();
 
 int HRL_Steuerung_init(){
 	printf("Start: HRL-Steuerung \n");
-	bool abort = false;
+	bool abort = false; //abbruch für Fehlschlag bei msgQ-Erstellung
 	
-	belegungsMatrix[2][3]=true;
-	
+	// msgQ für Bewgungsabläufe (aus Jobs generiert)
 	if ((mesgQueueIdNextMovement = msgQCreate(10,sizeof(NextMovement),MSG_Q_FIFO))	== NULL){
 		printf("msgQCreate (NextMovement) in HRL_Steuerung_init failed\n");
 		abort = true;
 	}
 	
+	// msgQ für Kommandos (User-Input)
 	if ((mesgQueueIdCmd = msgQCreate(MSG_Q_CMD_MAX_Messages,sizeof(commandbits),MSG_Q_PRIORITY))	== NULL){
 		printf("msgQCreate (CMD) in HRL_Steuerung_init failed\n");
 		abort = true;
 	}
 	
-	// Aktor Data Push
+	// msgQ die an AktorDataPush übergeben werden
 	if ( (mesgQueueIdAktorDataPush = msgQCreate(2, sizeof(Aktorbits), MSG_Q_FIFO)) == NULL){
 		printf("msgQCreate (AktorDataPush) in HRL_Steuerung_init failed\n");
 		abort = true;
@@ -79,15 +79,18 @@ int HRL_Steuerung_init(){
 		return (-1);
 	}
 	else{
+		// erstelle Task für Aktor-Daten und Stuerung
 		taskSpawn("HRL_Steuerung_AktorDataPush",Priority_HRL_Steuerung,0x100,2000,(FUNCPTR)HRL_Steuerung_AktorDataPush,0,0,0,0,0,0,0,0,0,0);
-		taskSpawn("HRL_Steuerung_HRL_Sterung_Movement",Priority_HRL_Steuerung,0x100,2000,(FUNCPTR)HRL_Steuerung_Movement,0,0,0,0,0,0,0,0,0,0);
+		taskSpawn("HRL_Steuerung_Movement",Priority_HRL_Steuerung,0x100,2000,(FUNCPTR)HRL_Steuerung_Movement,0,0,0,0,0,0,0,0,0,0);
 				
 		return 0;
 	}
-		
-	
 }
 
+/*
+ * Aktor-Daten werden durch globale Variable übergeben
+ * davor Pufferung in msgQ
+ */
 void HRL_Steuerung_AktorDataPush(){
 	abusdata transmit;
 	while (1){
@@ -101,34 +104,41 @@ void HRL_Steuerung_AktorDataPush(){
 	}
 }
 
+/*
+ * Steuerung holt sich die nächsten Movement-Ziele und steuert die Aktoren, entsprechend die Ziele zu erreichen
+ */
 void HRL_Steuerung_Movement(){
-	NextMovementUNION nextmove;
-	bool waitForSensor;
-	abusdata aktorData;
-	sbusdata sensorData;
+	NextMovementUNION nextmove; 	// Ziel der nächsten Bewegungs-Phase
+	bool waitForSensor;				// Schleifen-Abbruch falls Ziel einer Phase noch nicht errreicht ist
+	abusdata aktorData;				// Aktor-Daten für Übertragung am Zyklusende
+	
 	while(1){
-		HRL_Steuerung_GetNewJob(); //auto pause
+		// auf einen neuen Auftrag warten
+		HRL_Steuerung_GetNewJob(); 	//auto pause (blockiert diesen Task, falls es nichts zu tun gibt)
 		
-		while(msgQNumMsgs(mesgQueueIdNextMovement) > 0){
+		while(msgQNumMsgs(mesgQueueIdNextMovement) > 0){ //wenn es einen neuen Auftrag gibt, so werden alle Movement-Ziele der Reihe nach abgearbeitet
+			
 			//printf("i got %d job(s) to move my ass\n", msgQNumMsgs(mesgQueueIdNextMovement));
-			if(msgQReceive(mesgQueueIdNextMovement, nextmove.charvalue, sizeof(nextmove.charvalue), WAIT_FOREVER) == ERROR)
+			if(msgQReceive(mesgQueueIdNextMovement, nextmove.charvalue, sizeof(nextmove.charvalue), NO_WAIT) == ERROR)
 				printf("msgQ (NextMove) Receive in HRL_Steuerung_Movement failed\n");	
-			waitForSensor = true;
+			
+			waitForSensor = true; 							// reset Schleifen-Abbruch vor neuem Schleifendurchlauf 
 			while (waitForSensor){
-				HRL_Steuerung_Movement_GetSensorBusData(); //auto pause
-				aktorData.i=0; //alle Motoren aus	
+				HRL_Steuerung_Movement_GetSensorBusData(); 	// warte auf neue Sensor-Daten und verarbeite diese
+				aktorData.i=0; 								// alle Motoren aus			
 				
-				waitForSensor = false;
+				waitForSensor = false;						// warten abschalten (falls etwas nicht stimmt, wird es aktiviert)
 				
-				if (nextmove.move.allocation != DontCare){
+				if (nextmove.move.allocation != DontCare){	// Belegungsänderung-Auftrag prüfen
 					belegungsMatrix[lastSensorX][lastSensorY/2]=nextmove.move.allocation; 
-					nextmove.move.allocation = DontCare;
+					nextmove.move.allocation = DontCare;	// Auftrag später nicht nochmal durchführen
 				}
+				
 				//  X
-				if ( (lastSensorX != nextmove.move.x) && (nextmove.move.x != DontCare) ){
+				if ( (lastSensorX != nextmove.move.x) && (nextmove.move.x != DontCare) ){ 		// Stimmt der X-Wert noch nicht und soll er auch
 					waitForSensor = true;
 					
-					if ( ((lastSensorX-nextmove.move.x)*(lastSensorX-nextmove.move.x)) >= 4)
+					if ( ((lastSensorX-nextmove.move.x)*(lastSensorX-nextmove.move.x)) >= 4)	
 						aktorData.abits.axs = 1;
 					else
 						aktorData.abits.axs = 0;
@@ -331,17 +341,37 @@ void HRL_Steuerung_GetNewJob()
 	static int integrityCheckCounter;
 	static int pause;
 	int timeout[2] = {350, WAIT_FOREVER};
+	int i,j;
+	bool foundFreeSpace;
 	//printf("Go and get a new Job, Bitch!\n");
 	if(msgQReceive(mesgQueueIdCmd, cmdData.charvalue, sizeof(cmdData.charvalue), timeout[pause]) == ERROR) {//etwa 5 Sekunden Timeout
 		if( msgQNumMsgs(mesgQueueIdCmd) == 0){
-			//printf("Pause Job!\n");
-			pause = 1;
-			// Pause-Modus einleiten - Timeout
-			pause = true;
-			next3D = HRL_Steuerung_GetNewJob_DontCareState();
-			next3D.x = PositionXinput;
-			next3D.y = PositionYinput+1;
-			HRL_Steuerung_GetNewJob_Qsend(next3D);		
+			//printf("Searching Job! %d\n", zusatz);
+			if (!zusatz){
+				pause = 1;
+				// Pause-Modus einleiten - Timeout
+				pause = true;
+				next3D = HRL_Steuerung_GetNewJob_DontCareState();
+				next3D.x = PositionXinput;
+				next3D.y = PositionYinput+1;
+				HRL_Steuerung_GetNewJob_Qsend(next3D);
+			}
+			else{
+				cmdData.bits.highprio=0;
+				cmdData.bits.cmd=1;
+				for (j=0; j<(towerHeight); j++){
+					for (i=0; i<towerWidth; i++){
+						if (!belegungsMatrix[i][j]){
+							cmdData.bits.x=i;
+							cmdData.bits.y=j;
+							if((msgQSend(mesgQueueIdCmd,cmdData.charvalue,  sizeof(cmdData.charvalue), NO_WAIT, MSG_PRI_NORMAL)) == ERROR)
+								printf("msgQSend Zusatztask funktioniert nicht\n");	
+							printf("foudn zusatzjob\n");
+							return;
+						}
+					}
+				}
+			}
 		}
 	}
 	else{
