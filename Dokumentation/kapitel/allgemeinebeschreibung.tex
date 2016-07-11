@@ -21,7 +21,7 @@ Folgende Befehle werden zur Verfügung gestellt:
 	\item insert[x][y] $\rightarrow$ Holt ein Klötzchen vom Eingabe-Slot und legt es an gewünschter Position im Hochregallager ab
 	\item remove[x][y] $\rightarrow$ Holt ein Klötzchen von der gewünschten Position ab und legt es an den Ausgabe-Slot
 \end{itemize}
-\newline
+
 
 Sollte ein Befehl nicht möglich sein, da ein Hochregallagerplatz bereits belegt ist bzw. ein Fach aus dem ein Klötzchen geholt werden soll leer ist, wird der Anwender durch eine in der Konsole ausgegebene Fehlermeldung darauf aufmerksam gemacht und der Befehl nicht ausgeführt. Es können vor Abschluss eines Befehls weitere aufgegeben werden, welche sich in einer Warteschlange einreihen. Die Befehle \glqq{} clearspace \grqq{} und \glqq{}vsetspace\grqq{} werden nicht an das Ende dieser gestellt, sondern nach Abschluss des letzten bereits angefangenen Auftrages ausgeführt, da für diese keine Bewegung des Turms nötig ist. Für den Fall, das zu diesem Zeitpunkt eine weitere Operation mit dem selben Regalfach bereits in der Warteschlange ist, welche dieses Fach in einem anderen Belegungszustand benötigt, wird diese dann nicht ausgeführt und der Bediener über das Aussetzen dieses Auftrages mittels Konsolenausgabe informiert.
 Sobald kein weiterer Auftrag in der Warteschlange ist wird der Turm an die Position vor dem Eingabe-Slot gefahren und verweilt dort bis ein neuer Auftrag aufgegeben wird.
